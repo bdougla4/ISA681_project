@@ -1,3 +1,9 @@
+#The following Assurance Case highlight secure software design practices implemented during the development of the ISA_Scrabble Game.
+#Assurance claims and arguements are compliant with the specifications noted in 
+#References for generating this case can be found at:
+# https://www.cisa.gov/uscert/bsi/articles/knowledge/assurance-cases/arguing-security-creating-security-assurance-cases
+#
+
 Arguement 1 (main) The systems is acceptably secure:
 Claim 1 - System is secure against buffer overflow
 Subclaim 1.1 - Using buffer-safe programming language: Python
