@@ -1,0 +1,29 @@
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-sclae=1">
+<title>ISA Scrabble Login</title>
+<link rel="stylesheet" href="https://34.277.149.217/login">
+</head>
+
+<body>
+<div class="container">
+	<h2>Scrabble Login</h2>
+	<form action="{{url_for('login')}}" method="post">
+		{% if message is defined and message %}
+				<div class="alert alert-warning">{{message}}</div>
+			{% endif %}
+			<div class="form-group">
+				<label for="email">Email:</label>
+				<input type="email" class="form-control" id="email" name="email" placeholder="Enter email" name="email">
+			</div>
+			<div class="form-group">
+			<label for="pwd">Password:</label>
+			<input type="password" class="form-control" id="password" name="password" placeholder="Enter password" name="pswd">
+		</div>    
+		<button type="submit" class="btn btn-primary">Login</button>
+		<p class="bottom">Dont't have an account?  <a class="bottom" href="{{url_for('register')}}"> Register here</a></p>
+	</form>
+</div>
+</body>
+</html>
