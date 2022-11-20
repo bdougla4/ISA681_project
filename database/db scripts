@@ -8,7 +8,7 @@ CREATE SCHEMA IF NOT EXISTS scrabble;
 
 CREATE TABLE IF NOT EXISTS scrabble.login
 (
-	login_id INT PRIMARY KEY,
+	login_id BIGINT PRIMARY KEY,
 	username VARCHAR(50) UNIQUE NOT NULL,
 	password VARCHAR(50) NOT NULL,
 	actively_logged_in BOOLEAN NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS scrabble.login
 
 CREATE TABLE IF NOT EXISTS scrabble.users
 (
-	user_id INT PRIMARY KEY,
+	user_id BIGINT PRIMARY KEY,
 	username VARCHAR(50) UNIQUE NOT NULL,
 	win INT,
 	loss INT
@@ -27,9 +27,9 @@ CREATE TABLE IF NOT EXISTS scrabble.users
 
 CREATE TABLE IF NOT EXISTS scrabble.games
 (
-	game_id INT PRIMARY KEY,
-	username_id_one INT NOT NULL,
-	username_id_two INT NOT NULL,
+	game_id BIGINT PRIMARY KEY,
+	username_id_one BIGINT NOT NULL,
+	username_id_two BIGINT NOT NULL,
 	win BOOLEAN NOT NULL,
 	date_played date NOT NULL,
 	active_game BOOLEAN NOT NULL
@@ -37,8 +37,8 @@ CREATE TABLE IF NOT EXISTS scrabble.games
 
 CREATE TABLE IF NOT EXISTS scrabble.moves
 (
-	move_id INT PRIMARY KEY,
-	game_id INT,
+	move_id BIGINT PRIMARY KEY,
+	game_id BIGINT,
 	word_created VARCHAR(8),
 	turn_skipped BOOLEAN NOT NULL,
 	column_num INT,
@@ -79,7 +79,7 @@ CREATE DATABASE IF NOT EXISTS scrabble;
 
 CREATE TABLE IF NOT EXISTS scrabble.login
 (
-	login_id INT PRIMARY KEY,
+	login_id BIGINT PRIMARY KEY,
 	username VARCHAR(50) UNIQUE NOT NULL,
 	password VARCHAR(50) NOT NULL,
 	actively_logged_in BOOLEAN NOT NULL,
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS scrabble.login
 
 CREATE TABLE IF NOT EXISTS scrabble.users
 (
-	user_id INT PRIMARY KEY,
+	user_id BIGINT PRIMARY KEY,
 	username VARCHAR(50) UNIQUE NOT NULL,
 	win INT,
 	loss INT
@@ -98,18 +98,18 @@ CREATE TABLE IF NOT EXISTS scrabble.users
 
 CREATE TABLE IF NOT EXISTS scrabble.games
 (
-	game_id INT PRIMARY KEY,
-	username_id_one INT NOT NULL,
-	username_id_two INT NOT NULL,
-	win BOOLEAN NOT NULL,
+	game_id BIGINT PRIMARY KEY,
+	username_id_one BIGINT NOT NULL,
+	username_id_two BIGINT NOT NULL,
+	winner_user_id BIGINT,
 	date_played date NOT NULL,
 	active_game BOOLEAN NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS scrabble.moves
 (
-	move_id INT PRIMARY KEY,
-	game_id INT,
+	move_id BIGINT PRIMARY KEY,
+	game_id BIGINT,
 	word_created VARCHAR(8),
 	turn_skipped BOOLEAN NOT NULL,
 	column_num INT,
@@ -121,5 +121,7 @@ CREATE TABLE IF NOT EXISTS scrabble.moves
 ALTER TABLE scrabble.games ADD CONSTRAINT `games_user_id_fk_1` FOREIGN KEY (`username_id_one`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 ALTER TABLE scrabble.games ADD CONSTRAINT `games_user_id_fk_2` FOREIGN KEY (`username_id_two`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE scrabble.games ADD CONSTRAINT `games_user_id_fk_3` FOREIGN KEY (`winner_user_id`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 ALTER TABLE scrabble.moves ADD CONSTRAINT `moves_games_id_fk_1` FOREIGN KEY(`game_id`) REFERENCES `games`(`game_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
