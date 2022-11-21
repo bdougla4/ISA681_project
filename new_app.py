@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for, session
 import re
 from board.bag import *
 from database.users import *
+from game_play import *
 
 app = Flask(__name__)
 app.secret_key = 'isa681Scrabble'
@@ -74,7 +75,6 @@ dbCur = db.cursor()
 #     return render_template('register.html', msg = msg)
 
 bag = Bag()
-userWon(db, 'users1', 0)
 
 
 

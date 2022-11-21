@@ -76,9 +76,9 @@ def getUser(db, username):
     try:
         dbCur = db.cursor()
         dbCur.execute('SELECT * FROM users where username = %s', (username,))
-        for row in dbCur.fetchall():
-            print(row)
-        # TO-DO add return statement if needed
+        user = (dbCur.fetchone()[0])
+        print("returning user: " + user)
+        return user
     except Error as err:
         print(f"Error: '{err}'")
         db.close()

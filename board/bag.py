@@ -34,9 +34,7 @@ class Bag:
     Creates the bag of all tiles that will be available during the game. Contains 98 letters and two blank tiles.
     Takes no arguments to initialize.
     """
-    print('in class')
     def __init__(self):
-        print('in init')
         #Creates the bag full of game tiles, and calls the initialize_bag() method, which adds the default 100 tiles to the bag.
         #Takes no arguments.
         self.bag = []
