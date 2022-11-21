@@ -1,3 +1,6 @@
+# code taken from https://github.com/fayrose/Scrabble
+
+
 class Tile:
     """
     Class that allows for the creation of a tile. Initializes using an uppercase string of one letter,

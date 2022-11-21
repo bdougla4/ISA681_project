@@ -110,7 +110,9 @@ CREATE TABLE IF NOT EXISTS scrabble.moves
 (
 	move_id BIGINT PRIMARY KEY,
 	game_id BIGINT,
+	user_id BIGINT,
 	word_created VARCHAR(8),
+	points INT,
 	turn_skipped BOOLEAN NOT NULL,
 	column_num INT,
 	row_num INT,
@@ -125,3 +127,5 @@ ALTER TABLE scrabble.games ADD CONSTRAINT `games_user_id_fk_2` FOREIGN KEY (`use
 ALTER TABLE scrabble.games ADD CONSTRAINT `games_user_id_fk_3` FOREIGN KEY (`winner_user_id`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 ALTER TABLE scrabble.moves ADD CONSTRAINT `moves_games_id_fk_1` FOREIGN KEY(`game_id`) REFERENCES `games`(`game_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE scrabble.moves ADD CONSTRAINT `moves_user_id_fk_1` FOREIGN KEY(`user_id`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;

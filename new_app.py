@@ -3,6 +3,8 @@ from flask import Flask, render_template, request, redirect, url_for, session
 import re
 from board.bag import *
 from database.users import *
+from database.games import *
+from database.moves import *
 from game_play import *
 
 app = Flask(__name__)
@@ -75,6 +77,71 @@ dbCur = db.cursor()
 #     return render_template('register.html', msg = msg)
 
 bag = Bag()
+
+# order:
+# - determine if row / col is in bounds
+# - determine if user's word is using the correct available letters
+
+
+# create users
+print('creating new users')
+userId1 = Users.add_user(db, "user1")
+userId2 = Users.add_user(db, "user2")
+print('\n')
+# create game
+print('creating new game \n')
+gameId = Games.add_game(db, userId1, userId2)
+userId = userId1
+
+
+
+def turn(userId):
+    continueBlock = False
+    print("\n userId's turn: " + str(userId) + "\n")
+
+    while(continueBlock == False):
+        print('\n')
+        # get user's position
+        # TO-DO: get row and col and do checks on it 
+        positionInput = input("get position ")
+        positionAllowed = GamePlay.is_position_allowed(positionInput)
+        if positionAllowed == True:
+            continueBlock = True
+        
+    print('\n')
+    # get user's word
+    wordInput = input("get word ")
+    # skip functionality?
+    if(wordInput == "###"):
+        print('User skipped turn')
+        Moves.add_move(db, gameId, userId, None, 0, True, 0, 0, positionInput)
+    else: 
+        isWord = GamePlay.is_word_in_dictionary(wordInput)
+        # TO-DO: do we want a loop if word is not in dictionary?
+        if(isWord):
+            points = GamePlay.calculate_word_score(wordInput)
+            Moves.add_move(db, gameId, userId, wordInput, points, False, 0, 0, positionInput)
+        else:
+            print('word is not in dictionary. No points calculated')
+            Moves.add_move(db, gameId, userId, wordInput, 0, False, 0, 0, positionInput)
+    continueBlock = False
+
+while True:
+    if(userId == userId2):
+        userId = userId1
+    else: 
+        userId = userId2
+    # user's turn
+    turn(userId)
+
+
+
+
+    
+
+
+
+
 
 
 

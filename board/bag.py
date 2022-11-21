@@ -1,3 +1,4 @@
+# code taken from https://github.com/fayrose/Scrabble
 from random import shuffle
 from board.tile import *
 
