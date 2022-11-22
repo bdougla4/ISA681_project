@@ -22,7 +22,7 @@ class GamePlay:
     # checks if the user's position is "right" or "down"
     def is_position_allowed(position): 
         print("checking is user's position is allowed: " + position)
-        if ((position == "right" or position == "down")) :
+        if ((position.upper() == "RIGHT" or position.upper() == "DOWN")) :
             print("user's position input is acceptable")
             return True
         else:

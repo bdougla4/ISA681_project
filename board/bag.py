@@ -54,14 +54,16 @@ class Bag:
         self.add_to_bag(Tile("C", LETTER_VALUES), 2)
         self.add_to_bag(Tile("D", LETTER_VALUES), 4)
         self.add_to_bag(Tile("E", LETTER_VALUES), 12)
-        self.add_to_bag(Tile("F", LETTER_VALUES), 2)
+        # added one more F to replace #
+        self.add_to_bag(Tile("F", LETTER_VALUES), 3)
         self.add_to_bag(Tile("G", LETTER_VALUES), 3)
         self.add_to_bag(Tile("H", LETTER_VALUES), 2)
         self.add_to_bag(Tile("I", LETTER_VALUES), 9)
         self.add_to_bag(Tile("J", LETTER_VALUES), 9)
         self.add_to_bag(Tile("K", LETTER_VALUES), 1)
         self.add_to_bag(Tile("L", LETTER_VALUES), 4)
-        self.add_to_bag(Tile("M", LETTER_VALUES), 2)
+        # added one more M to replace #
+        self.add_to_bag(Tile("M", LETTER_VALUES), 3)
         self.add_to_bag(Tile("N", LETTER_VALUES), 6)
         self.add_to_bag(Tile("O", LETTER_VALUES), 8)
         self.add_to_bag(Tile("P", LETTER_VALUES), 2)
@@ -75,7 +77,7 @@ class Bag:
         self.add_to_bag(Tile("X", LETTER_VALUES), 1)
         self.add_to_bag(Tile("Y", LETTER_VALUES), 2)
         self.add_to_bag(Tile("Z", LETTER_VALUES), 1)
-        self.add_to_bag(Tile("#", LETTER_VALUES), 2)
+        # self.add_to_bag(Tile("#", LETTER_VALUES), 2)
         shuffle(self.bag)
 
     def take_from_bag(self):

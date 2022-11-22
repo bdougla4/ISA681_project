@@ -2,6 +2,7 @@ import pymysql
 from flask import Flask, render_template, request, redirect, url_for, session
 import re
 from board.bag import *
+from board.rack import *
 from database.users import *
 from database.games import *
 from database.moves import *
@@ -76,12 +77,23 @@ dbCur = db.cursor()
 #         msg = "Please complete the required fields."
 #     return render_template('register.html', msg = msg)
 
-bag = Bag()
+
+
+
+# print(bag)
+# print(rack.get_rack_str())
+# print("A" in rack.get_rack_arr())
+# for tile in rack.get_rack_arr():
+#     print(tile.get_letter())
+# print(rack.get_rack_arr())
 
 # order:
 # - determine if row / col is in bounds
 # - determine if user's word is using the correct available letters
 
+print('creating bag and rack')
+bag = Bag()
+rack = Rack(bag)
 
 # create users
 print('creating new users')
@@ -94,11 +106,8 @@ gameId = Games.add_game(db, userId1, userId2)
 userId = userId1
 
 
-
-def turn(userId):
+def get_user_position():
     continueBlock = False
-    print("\n userId's turn: " + str(userId) + "\n")
-
     while(continueBlock == False):
         print('\n')
         # get user's position
@@ -107,11 +116,20 @@ def turn(userId):
         positionAllowed = GamePlay.is_position_allowed(positionInput)
         if positionAllowed == True:
             continueBlock = True
-        
+            return positionInput
+
+def get_user_word(positionInput):
     print('\n')
     # get user's word
-    wordInput = input("get word ")
-    # skip functionality?
+    wordInput = input("Create a word longer than 2 letters using the letters in your rack, or enter ### to skip a turn \n")
+    if len(wordInput) < 2:
+        print("word must be longer than 2 letters. Try again \n")
+        get_user_word(positionInput)
+    for letter in wordInput:
+        if letter.upper() not in rack.get_rack_str():
+            print("'" + letter + "'" + ' not in rack. Try again')
+            get_user_word(positionInput)
+    # skip functionality
     if(wordInput == "###"):
         print('User skipped turn')
         Moves.add_move(db, gameId, userId, None, 0, True, 0, 0, positionInput)
@@ -124,7 +142,15 @@ def turn(userId):
         else:
             print('word is not in dictionary. No points calculated')
             Moves.add_move(db, gameId, userId, wordInput, 0, False, 0, 0, positionInput)
+
+def turn(userId):
     continueBlock = False
+    print("\nuserId's turn: " + str(userId) + "\n")
+    print("\nThese are the letters in your rack: " + rack.get_rack_str())
+
+    positionInput = get_user_position()
+    get_user_word(positionInput)
+
 
 while True:
     if(userId == userId2):
