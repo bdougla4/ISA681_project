@@ -7,7 +7,7 @@
 </head>
 <body>
  <h1> <div class="alert alert-warning">{{ msg }}</div> </h1>
-
+    Logged in : <strong>{{session.id}} | <a href="{{ url_for('logout') }}"> Logout</a>
 
     <p class="top"> href="{{url_for('logout')}}">Logout</p>
 </body>
