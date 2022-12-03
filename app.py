@@ -4,6 +4,10 @@ import MySQLdb.cursors
 import os
 import re
 import bcrypt
+
+#Loding .env file to keep database username/passwords from being hardcoded into source code. 
+from dotenv import load_dotenv
+load_dotenv()
 '''
 from flaskext.mysql import MySQL
 import mysql.connector
@@ -13,8 +17,8 @@ app = Flask(__name__)
 app.secret_key = os.urandom(12)
 
 app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'isa681'
-app.config['MYSQL_PASSWORD'] = 'admin'
+app.config['MYSQL_USER'] = os.getenv('DB_SCRABBLE')
+app.config['MYSQL_PASSWORD'] = os.getenv('DB_SCRABBLE_PWD')
 app.config['MYSQL_DB'] = 'Login'
 
 #Connecting to MySQL database (MYSQL_DB)
