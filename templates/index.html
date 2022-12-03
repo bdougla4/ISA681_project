@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ISA Scrabble Home Page</title>
+    <!link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://localhost/">
+</head>
+<body>
+		<div class="homepage">
+			<h1>ISA681 Scrabble </h1>
+			<div class="links">
+				<a href="{{ url_for('login') }}" class="active">Login</a>
+			</div>
+			<p class="bottom">Don't have an account?  <a class="bottom" href="{{url_for('register')}}"> Register here</a></p>
+		</div>
+	</body>
+</html>
+
+
+
+
