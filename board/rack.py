@@ -1,3 +1,5 @@
+# code taken from https://github.com/fayrose/Scrabble
+
 class Rack:
     """
     Creates each player's 'dock', or 'hand'. Allows players to add, remove and replenish the number of tiles in their hand.

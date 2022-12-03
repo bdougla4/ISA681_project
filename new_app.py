@@ -1,12 +1,16 @@
 import pymysql
 from flask import Flask, render_template, request, redirect, url_for, session
 import re
+import logging
 from board.bag import *
 from board.rack import *
 from database.users import *
 from database.games import *
 from database.moves import *
 from game_play import *
+
+# TO-DO: do we want to log things to a file? 
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 app.secret_key = 'isa681Scrabble'
@@ -125,6 +129,7 @@ def get_user_word(positionInput):
     if len(wordInput) < 2:
         print("word must be longer than 2 letters. Try again \n")
         get_user_word(positionInput)
+    # TO-DO: using regex might be difficult here since our racks are dynamic
     for letter in wordInput:
         if letter.upper() not in rack.get_rack_str():
             print("'" + letter + "'" + ' not in rack. Try again')
@@ -144,7 +149,6 @@ def get_user_word(positionInput):
             Moves.add_move(db, gameId, userId, wordInput, 0, False, 0, 0, positionInput)
 
 def turn(userId):
-    continueBlock = False
     print("\nuserId's turn: " + str(userId) + "\n")
     print("\nThese are the letters in your rack: " + rack.get_rack_str())
 

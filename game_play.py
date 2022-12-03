@@ -1,6 +1,7 @@
 from PyDictionary import PyDictionary
 from board.bag import LETTER_VALUES
 
+# TO-DO: ensure log injection can't happen 
 class GamePlay:
 
     # checks if word is a real English word

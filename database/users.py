@@ -1,7 +1,6 @@
 import random
+import logging
 from mysql.connector import Error
-
-# TO-DO: change print statements to log statements
 
 class Users:
 
@@ -10,53 +9,53 @@ class Users:
             id = random.getrandbits(32)
             # TO-DO: do we want to pass in the db? or the cursor? or initialize it every time?
             dbCur = db.cursor()
-            print('adding user into db')
+            logging.debug("Adding user into db")
             dbCur.execute("INSERT into users(user_id, username, win, loss) values(%s, %s, %s, %s)", (id, username, 0, 0))
             # TO-DO: are we ok with how I create the user_id?
             db.commit()
-            print('inserted user with id: ' + str(id))
+            logging.info("Inserted user into table with id: %s", str(id))
             return id
         except Error as err:
-            print(f"Error: '{err}'")
+            logging.error("Error: %s", err)
             db.close()
 
     def get_users_win_rate(db, username):
         try:
             dbCur = db.cursor()
-            print("getting user's win rate")
+            logging.debug("Getting user: %s's win rate", username)
             dbCur.execute("SELECT win FROM users WHERE username = %s", (username,))
             # TO-DO add log to catch an error if fetchone is empty
             winResults = (dbCur.fetchone()[0])
-            print("user's current wins: " + winResults)
+            logging.info("User: %s's current wins: %s", username, winResults)
             return winResults
         except Error as err:
-            print(f"Error: '{err}'")
+            logging.error("Error: %s", err)
             db.close()
 
     def set_user_won(db, username):
         try:
             winResults = getUsersWinRate(db, username) + 1
             dbCur = db.cursor()
-            print("changing user's win rate to: " + winResults)
+            logging.debug("Changing user: %s's win rate to: %s", username, winResults)
             dbCur.execute("UPDATE users SET win = %s WHERE username = %s", (winResults, username))
             db.commit()
-            print("updated user's win rate")
+            logging.info("Updated user: %s's win rate to: %s", username, winResults)
 
         except Error as err:
-            print(f"Error: '{err}'")
+            logging.error("Error: %s", err)
             db.close()
 
     def get_users_loss_rate(db, username):
         try:
             dbCur = db.cursor()
-            print("getting user's loss rate")
+            logging.debug("Getting user: %s's loss rate", username)
             dbCur.execute("SELECT loss FROM users WHERE username = %s", (username,))
             # TO-DO add log to catch an error if fetchone is empty
             lossResults = (dbCur.fetchone()[0])
-            print("user's current losses: " + lossResults)
+            logging.info("User: %s's current losses: %s", username, lossResults)
             return lossResults
         except Error as err:
-            print(f"Error: '{err}'")
+            logging.error("Error: %s", err)
             db.close()
 
 
@@ -64,35 +63,36 @@ class Users:
         try:
             lossResults = getUsersLossRate(db, username) + 1
             dbCur = db.cursor()
-            print("changing user's loss rate to: " + lossResults)
+            logging.debug("Changing user: %s's loss rate to: %s", username, lossResults)
             dbCur.execute("UPDATE users SET loss = %s WHERE username = %s", (lossResults, username))
             db.commit()
-            print("updated user's loss rate")
+            logging.info("Updated user: %s's loss rate to: %s", username, lossResults)
 
         except Error as err:
-            print(f"Error: '{err}'")
+            logging.error("Error: %s", err)
             db.close()
 
 
     def get_user(db, username):
         try:
+            logging.debug("Getting user: %s", username)
             dbCur = db.cursor()
             dbCur.execute('SELECT * FROM users where username = %s', (username,))
             user = (dbCur.fetchone())
-            print("returning user: " + str(user))
+            logging.info("Returning user: %s", str(user))
             return user
         except Error as err:
-            print(f"Error: '{err}'")
+            logging.error("Error: %s", err)
             db.close()
 
 
-    def get_all_users(db):
-        try:
-            dbCur = db.cursor()
-            dbCur.execute('SELECT * FROM users')
-            for row in dbCur.fetchall():
-                print(row)
-            # TO-DO add return statement if needed
-        except Error as err:
-            print(f"Error: '{err}'")
-            db.close()
+    # def get_all_users(db):
+    #     try:
+    #         dbCur = db.cursor()
+    #         dbCur.execute('SELECT * FROM users')
+    #         for row in dbCur.fetchall():
+    #             print(row)
+    #         # TO-DO add return statement if needed
+    #     except Error as err:
+    #         print(f"Error: '{err}'")
+    #         db.close()
