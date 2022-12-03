@@ -1,24 +1,16 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scrabble User Account</title>
-<link rel="stylesheet" href="https://34.227.149.217/userprofile">              
+    <meta charset="UTF-8">
+    <title>Welcome</title>
+    <link rel="stylesheet" href="http://localhost/user/">
 </head>
 <body>
-<div class="container">
-	<div class="row">	
-		<h1>Scrabble User Profile</h1>
-	</div>
-	<br>
-	<div class="row">	
+ <h1> <div class="alert alert-warning">{{ msg }}</div> </h1>
+    <div class="row">	
 		Logged in : <strong>{{session.name}} | <a href="{{ url_for('logout') }}"> Logout</a>
 	</div>
-	<br><br>
-	<div class="row">
-	    
-		<h2>Welcom to ISA Scrabble</h2> 
-	</div>		
-</div>
+
+    <p class="top"> href="{{url_for('logout')}}">Logout</p>
 </body>
 </html>

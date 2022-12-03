@@ -1,29 +1,31 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-sclae=1">
-<title>ISA Scrabble Login</title>
-<link rel="stylesheet" href="https://34.277.149.217/login">
+    <meta charset="UTF-8">
+    <title>ISA Scrabble Login</title>
+    <!link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://localhost/login/">
 </head>
-
 <body>
-<div class="container">
-	<h2>Scrabble Login</h2>
-	<form action="{{url_for('login')}}" method="post">
-		{% if message is defined and message %}
-				<div class="alert alert-warning">{{message}}</div>
-			{% endif %}
-			<div class="form-group">
-				<label for="email">Email:</label>
-				<input type="email" class="form-control" id="email" name="email" placeholder="Enter email" name="email">
-			</div>
-			<div class="form-group">
-			<label for="pwd">Password:</label>
-			<input type="password" class="form-control" id="password" name="password" placeholder="Enter password" name="pswd">
-		</div>    
-		<button type="submit" class="btn btn-primary">Login</button>
-		<p class="bottom">Dont't have an account?  <a class="bottom" href="{{url_for('register')}}"> Register here</a></p>
-	</form>
-</div>
-</body>
+		<div class="login">
+			<h1>ISA681 Scrabble Login Page </h1>
+			<form action="{{ url_for('login') }}" method="post">
+				{% if msg is defined and msg %}
+					<div class="alert alert-warning">{{ msg }}</div>
+				{% endif %}
+				<label for="username">
+					<i class="fas fa-user"></i>
+				</label>
+				<input type="text" name="username" placeholder="Username" id="username" required>
+				<label for="password">
+					<i class="fas fa-lock"></i>
+				</label>
+				<input type="password" name="password" placeholder="Password" id="password" required>
+				<div class="msg">{{ msg }}</div>
+				<input type="submit" value="Login">
+
+				<p class="bottom">Don't have an account?  <a class="bottom" href="{{url_for('register')}}"> Register here</a></p>
+			</form>
+		</div>
+	</body>
 </html>
