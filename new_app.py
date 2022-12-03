@@ -1,75 +1,112 @@
-import pymysql
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import escape, Flask, redirect, render_template, request, session, url_for
+from flask_mysqldb import MySQL
+import MySQLdb.cursors
+import os
 import re
+import bcrypt
+'''
+from flaskext.mysql import MySQL
+import mysql.connector
+'''
 
 app = Flask(__name__)
-app.secret_key = 'isa681Scrabble'
+app.secret_key = os.urandom(12)
 
-#connecting to MySQL database
-db = pymysql.connect(host="localhost", user="root", password="admin", database="scrabbleTestdb")
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'isa681'
+app.config['MYSQL_PASSWORD'] = 'admin'
+app.config['MYSQL_DB'] = 'Login'
 
-dbCur = db.cursor()
+#Connecting to MySQL database (MYSQL_DB)
+db = MySQL(app)
 
-#remove the following try/except. only used for debbuging purposes
-try:
-    dbCur.execute('SELECT * FROM user')
-    for row in dbCur.fetchall():
-        print(row)
-except:
-    print("Error: Unable to fetch data. Does Databse exist?")
-    db.close()
 
-@app.route('/')
-@app.route('/login', methods = ['GET','POST'])
-def log():
-    ''' Login function for Scrabble game. '''
-    msg = ''
-    if request.method == 'POST' and 'email' in request.form and 'password' in request.form:
-        email = request.form['email']
-        passwd = request.form['password']
-        dbCur.execute('SELECT * FROM user WHERE email = %s AND password= %s', (email, passwd))
-        user = cursor.fetchone()
-        if user:
-            session['loggedin'] = True
-            session['userid'] = user['userid']
-            session['name'] = user['name']
-            session['email'] = user['email']
-            msg = 'Logged in successfully!'
-            return render_template('user.html',msg = msg)
+@app.route("/")
+def homepage():
+    """ISA Scrabble general homepage for users to Login database, Register or Reset password"""
+    return render_template('index.html')
+
+
+@app.route('/login/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
+        cursor = db.connection.cursor(MySQLdb.cursors.DictCursor)
+        #username = request.form["username"]
+        # password = (request.form["password"]).encode('utf-8')
+
+        #properly escaping user input to avoid XSS
+        username = str(escape(request.form["username"]))
+        password = escape(request.form["password"]).encode('utf-8')
+
+        #check if username is in database
+        cursor.execute("SELECT * from users where usrname='" + username + "'")
+        account = cursor.fetchone()
+
+        ## cursor.execute("SELECT * from users where usrname='" + username + "' and password='" + password + "'")
+
+        if account is None:
+            msg = "No account with that name. Would you like to Register?"
+            print("msg " + msg)
+            return render_template("index.html", msg=msg)
         else:
-            msg = 'Incorrect username/password!'
-    return render_template('login.html', msg = msg)
+            #check if correct password was entered
+            salt = account['salt'].encode('utf-8')
+            enteredPswd = bcrypt.hashpw(password, salt)
+
+            if enteredPswd == account['passwordHash'].encode('utf-8'):
+                session['loggedin'] = True
+                session['id'] = account['userID']
+                session['name'] = account['usrname']
+                session['email'] = account['email']
+                msg = "Welcome " + username + "!"
+                return render_template("user.html", msg=msg)
+            else:
+                msg = "Incorrect Username/Password!"
+                return render_template('login.html', msg=msg)
+    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
-    session.pop('loggedin', None)
-    session.pop('userid', None)
-    session.pop('email', None)
-    return redirect(url_for('login'))
+    # Remove session data, this will log the user out
+   session.pop('loggedin', None)
+   session.pop('id', None)
+   session.pop('username', None)
 
-@app.route('/register', methods=['GET','POST'])
+   # Redirect to login page
+   return redirect(url_for('login'))
+
+
+@app.route('/register/', methods=['GET', 'POST'])
 def register():
-    '''Scrabble Registration routine for accounts not found in the MySQL database.'''
-    msg =''
-    if request.method =='POST' and 'name' in request.form and 'password' in request.form and 'email' in request.form:
-        userName = request.form['name']
-        password = request.form['password']
-        email = request.form['email']
-        dbCur.execute('SELECT * FROM user WHERE email = % s', (email, ))
-        account = dbCur.fetchone()
-        if account:
-            msg ="You are now registered. Enjoy playing"
-        elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-            msg = "Invalid email address!"
-        elif not userName or not password or not email:
-            msg = "Please complete required fields."
-        else:
-            dbCur.execute('INSERT INTO user VALUES (NULL, % s, % s, % s)', (userName, email, password, ))
-            db.commit()
-            msg = 'You are now registered!'
+    msg = ''
+    if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
+        if 'email' in request.form:
+            cursor = db.connection.cursor(MySQLdb.cursors.DictCursor)
+            username = escape(request.form['username'])
+            password = escape(request.form['password']).encode('utf-8')
+            email = escape(request.form['email'])
+            cursor.execute('SELECT * FROM users WHERE usrname = %s', (username,))
+            account = cursor.fetchone()
+            if account:
+                msg = 'Account already exists !'
+                return render_template('login.html', msg=msg)
+            elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
+                msg = 'Invalid email address !'
+            elif not username or not password or not email:
+                msg = 'Please complete all required fields.'
+            else:
+                #generating salt and hashing password
+                salt = bcrypt.gensalt()
+                passwordHash = bcrypt.hashpw(password, salt)
+                cursor.execute('INSERT INTO users VALUES (NULL, %s, %s, %s, %s)', (username, passwordHash, salt, email,))
+                db.connection.commit()
+                msg = 'You have successfully registered !'
+        elif request.method == 'POST':
+            msg = 'Please complete all required fields.'
     elif request.method == 'POST':
-        msg = "Please complete the required fields."
-    return render_template('register.html', msg = msg)
+        msg = 'Please complete all required fields.'
+    return render_template('register.html', msg=msg)
 
-if __name__=='__main__':
+
+if __name__ == "__main__":
     app.run()
