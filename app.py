@@ -131,10 +131,9 @@ def menu():
         logging.info("user has active game")
 
     logging.info("active game = %s", activeGame)
+    return render_template('menu.html', activeGame=activeGame, gameForfeited=False)
 
-    return render_template('menu.html', activeGame=activeGame)
-
-@app.route('/endGame/', methods=['GET', 'POST'])
+@app.route('/end-game/', methods=['GET', 'POST'])
 def forfeitGame():
     username = 364952648
     username2 = 1356773521
@@ -143,7 +142,47 @@ def forfeitGame():
 
     # TO-DO get the correct username to mark as winner
     Games.game_finished(Games, dbCur, username, username2, username2)
-    
+    db.connection.commit()
+    return render_template('menu.html', activeGame=False, gameForfeited=True)
+
+@app.route('/scoreboard/', methods=['GET', 'POST'])
+def scoreboard():
+    print(request.args)
+    if request.method == 'GET' and (('username' in request.args) or 
+    ('user-score' in request.args) or ('self-score' in request.args)):
+        # print(request.args)
+        
+        # str(escape(request.form["username"]))
+        # elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
+        # pattern="[A-Za-z]{50} | [^@]+@[^@]+\.[^@]+">
+        username = request.args.get('username')
+        print('username: ')
+        print(username)
+        if (username != ''):
+            username = str(escape(username))
+            if ((re.match(r'[^@]+@[^@]+\.[^@]+', username)) or (re.match(r'[A-Za-z]{1,50}', username))):
+                print('good username format')
+            else:
+                print('bad username format')
+        # print('username: ')
+        # print(username)
+        # if user requests to see another user's score:
+        userScore = request.args.get('user-score')
+        # if user requests to see their own scores:
+        selfScore = request.args.get('self-score')            
+
+
+
+    return render_template('scoreboard.html')
+
+# @app.route('/scores/', methods=['GET', 'POST'])
+# def scores():
+#     print('in scores')
+#     print(request.form['user-score'])    
+#     print(request.form['self-score'])
+#     # return render_template('score-board.html')
+
+        
 
 
 if __name__ == "__main__":

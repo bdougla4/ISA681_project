@@ -11,11 +11,15 @@
 <body>
 		<div class="menu">
 			<h1>Menu </h1>
+            {% if gameForfeited is defined and gameForfeited %}
+            <alert>Game was Forfeited.</alert>
+            {% endif %}
+
             {% if activeGame is defined and activeGame %}
             <h3>You already have an active game running.</h3>
             <h3>Continue this game or forfeit it. (Note you will lose the game.)</h3>
             <button>Continue Active Game</button>
-            <form action="/endGame">
+            <form action="/end-game">
                 <button id='forfeitGame'>Forfeit Active Game</button>
                 <!-- <button type="submit" value="Send Email" /> -->
             </form>
@@ -25,6 +29,9 @@
             <button>Start New Game</button>
             {% endif %}
             <h3>View Scoreboard</h3>
+            <a href="{{url_for('scoreboard')}}">
+                <button>View Scoreboard</button>
+            </a>
 		</div>
 	</body>
 </html>

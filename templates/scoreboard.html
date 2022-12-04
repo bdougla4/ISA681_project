@@ -1,0 +1,49 @@
+<!-- TO-DO: if user has existing game, display button to join existing game -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Menu</title>
+    <!link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://localhost/scoreboard/">
+</head>
+<body>
+		<div class="scoreboard">
+			<h1>Scoreboard</h1>
+            <!-- {% if gameForfeited is defined and gameForfeited %}
+            <alert>Game was Forfeited.</alert>
+            {% endif %}
+
+            <h2>Enter the username or email of the player whose scores you would like to view:</h2>
+            <form action="/scores">
+                <input type="text" name="username" placeholder="Username or Email" id="username">
+                <button name="score" value="user-score">Search User Scores</button>
+            </form> -->
+
+            <form action="{{ url_for('scoreboard') }}" method="GET">
+                <h2>Enter the username or email of the player whose scores you would like to view:</h2>
+
+                {% if invalidUsername is defined and invalidUsername %}
+                    <alert>Invalid Username Format</alert>
+                {% endif %}
+                <!-- TO-DO: how are we formatting username? -->
+                <input type="text" name="username" placeholder="Username or Email" id="username" 
+                pattern="(^[A-Za-z]{1,50}$)|(^[^@]+@[^@]+\.[^@]+$)">
+                <button name="user-score" value="user-score">Search User Scores</button>
+
+                <h2>Or view your own scores:</h2>
+                <button name="self-score" value="self-score">View my Scores</button>
+            </form>
+
+            {% if scoresRetrieved is defined and scoresRetrieved %}
+            <h2>Viewing scores for user: {{username}}</h2>
+            {% endif %}
+
+            <div></div>
+            <a href="{{url_for('menu')}}">
+                <button>Back to Menu</button>            
+            </a>
+		</div>
+	</body>
+</html>

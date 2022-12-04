@@ -45,9 +45,10 @@ class Games:
         try:
             gameId = self.get_all_active_games_by_both_user_id(dbCur, user_one, user_two)
             logging.debug("Updating finished game for game_id: %s", gameId)
-            dbCur.execute("UPDATE games SET winner_user_id = %s active_game = False WHERE game_id = %s", (winner, gameId))
-            dbCur.commit()
+            dbCur.execute("UPDATE games SET winner_user_id = %s, active_game = False WHERE game_id = %s", (winner, gameId))
+            # dbCur.commit()
             logging.info("Updated finished game")
+            return
 
         except Error as err:
             logging.error("Error: %s", err)
