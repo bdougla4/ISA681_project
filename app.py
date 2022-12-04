@@ -4,7 +4,8 @@ import MySQLdb.cursors
 import os
 import re
 import bcrypt
-
+import logging
+from database.games import *
 #Loding .env file to keep database username/passwords from being hardcoded into source code. 
 from dotenv import load_dotenv
 load_dotenv()
@@ -16,13 +17,15 @@ import mysql.connector
 app = Flask(__name__)
 app.secret_key = os.urandom(12)
 
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = os.getenv('DB_SCRABBLE')
-app.config['MYSQL_PASSWORD'] = os.getenv('DB_SCRABBLE_PWD')
-app.config['MYSQL_DB'] = 'Login'
+app.config['MYSQL_HOST'] = '127.0.0.1'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = ''
+app.config['MYSQL_DB'] = 'scrabble'
 
 #Connecting to MySQL database (MYSQL_DB)
 db = MySQL(app)
+# TO-DO: do we want to log things to a file? 
+logging.basicConfig(level=logging.DEBUG)
 
 
 @app.route("/")
@@ -80,6 +83,7 @@ def logout():
    return redirect(url_for('login'))
 
 
+
 @app.route('/register/', methods=['GET', 'POST'])
 def register():
     msg = ''
@@ -110,6 +114,36 @@ def register():
     elif request.method == 'POST':
         msg = 'Please complete all required fields.'
     return render_template('register.html', msg=msg)
+
+
+@app.route('/board/', methods=['GET', 'POST'])
+def board():
+    return render_template('board.html')
+
+@app.route('/menu/', methods=['GET', 'POST'])
+def menu():
+    username = 364952648
+    activeGame = False
+    logging.info("checking if user has active game")
+    dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
+    if Games.get_all_active_games_for_single_user_id(dbCur, username) != None:
+        activeGame = True 
+        logging.info("user has active game")
+
+    logging.info("active game = %s", activeGame)
+
+    return render_template('menu.html', activeGame=activeGame)
+
+@app.route('/endGame/', methods=['GET', 'POST'])
+def forfeitGame():
+    username = 364952648
+    username2 = 1356773521
+    dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
+    logging.info("user: %s forfeited game", username)
+
+    # TO-DO get the correct username to mark as winner
+    Games.game_finished(Games, dbCur, username, username2, username2)
+    
 
 
 if __name__ == "__main__":
