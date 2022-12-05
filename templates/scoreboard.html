@@ -35,6 +35,11 @@
                 <button name="self-score" value="self-score">View my Scores</button>
             </form>
 
+            {% if noScores is defined and noScores == True %}
+            <h3>User has no completed games or does not exist</h3>
+            {% endif %}
+
+
             {% if scoresRetrieved is defined and scoresRetrieved %}
             <h2>Viewing scores for user: {{username}}</h2>
             {% if userFinalScores is defined and userFinalScores %}

@@ -154,6 +154,9 @@ def forfeitGame():
 
 @app.route('/scoreboard/', methods=['GET', 'POST'])
 def scoreboard():
+    noScores = False
+    userFinalScores = None
+
     if request.method == 'GET' and (('username' in request.args) or 
     ('user-score' in request.args) or ('self-score' in request.args)):
         username = request.args.get('username')
@@ -172,21 +175,19 @@ def scoreboard():
 
         dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
         if((userScore == None) or (userScore == '')):
-            logging.debug('getting score for current user: %s', username)
+            logging.debug('user: %s wants to see their own personal scores', username)
+            username = 'user1'
 
-            # TO-DO: get username for current user
-            userFinalScores = Users.get_user_by_user_name(Users, dbCur, 'user1')
-            # TO-DO: get username for current user
-            scoresRetrieved = Users.get_user_score_board(Users, dbCur, 'user1')
-            return render_template('scoreboard.html', scoresRetrieved=scoresRetrieved, username='user1', userFinalScores=userFinalScores)
-
-        else:
-            logging.debug('getting score for another user: %s', username)
+        logging.debug('getting score for user: %s', username)
+        # TO-DO: get username for current user
+        scoresRetrieved = Users.get_user_score_board(Users, dbCur, username)
+        if scoresRetrieved != []:
             # TO-DO: get username for current user
             userFinalScores = Users.get_user_by_user_name(Users, dbCur, username)
-            # TO-DO: get username for current user
-            scoresRetrieved = Users.get_user_score_board(Users, dbCur, username)
-            return render_template('scoreboard.html', scoresRetrieved=scoresRetrieved, username=username, userFinalScores=userFinalScores)   
+        else:
+            noScores = True
+
+        return render_template('scoreboard.html', scoresRetrieved=scoresRetrieved, username=username, userFinalScores=userFinalScores, noScores=noScores)   
 
     return render_template('scoreboard.html')
 
