@@ -127,7 +127,7 @@ def board():
 @app.route('/menu/', methods=['GET', 'POST'])
 def menu():
     activeGame = False
-    logging.info("checking if user has active game")
+    logging.debug("checking if user has active game")
     dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
     if Games.get_all_active_games_for_single_user_id(dbCur, userid) != None:
         activeGame = True 
@@ -165,35 +165,30 @@ def scoreboard():
             if re.match(r'[A-Za-z0-9]{1,50}', username):
                 logging.info('%s is good username format', username)
             else:
-                print('%s is bad username format', username)
+                logging.warn('%s is bad username format', username)
 
         userScore = request.args.get('user-score')
         selfScore = request.args.get('self-score')       
 
         dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
         if((userScore == None) or (userScore == '')):
-            logging.info('getting score for current user: %s', username)
+            logging.debug('getting score for current user: %s', username)
+
             # TO-DO: get username for current user
-            scoresRetrieved = Users.get_user_by_user_name(dbCur, 'user1')
-            print(scoresRetrieved)
-            return render_template('scoreboard.html', scoresRetrieved=scoresRetrieved, username='user1')
+            userFinalScores = Users.get_user_by_user_name(Users, dbCur, 'user1')
+            # TO-DO: get username for current user
+            scoresRetrieved = Users.get_user_score_board(Users, dbCur, 'user1')
+            return render_template('scoreboard.html', scoresRetrieved=scoresRetrieved, username='user1', userFinalScores=userFinalScores)
 
         else:
-            logging.info('getting score for another user: %s', username)
-            scoresRetrieved = Users.get_user_by_user_name(dbCur, username)
-            print(scoresRetrieved)
-            return render_template('scoreboard.html', scoresRetrieved=scoresRetrieved, username=username)   
+            logging.debug('getting score for another user: %s', username)
+            # TO-DO: get username for current user
+            userFinalScores = Users.get_user_by_user_name(Users, dbCur, username)
+            # TO-DO: get username for current user
+            scoresRetrieved = Users.get_user_score_board(Users, dbCur, username)
+            return render_template('scoreboard.html', scoresRetrieved=scoresRetrieved, username=username, userFinalScores=userFinalScores)   
 
     return render_template('scoreboard.html')
-
-# @app.route('/scores/', methods=['GET', 'POST'])
-# def scores():
-#     print('in scores')
-#     print(request.form['user-score'])    
-#     print(request.form['self-score'])
-#     # return render_template('score-board.html')
-
-        
 
 
 if __name__ == "__main__":

@@ -80,7 +80,7 @@ class Users:
             dbCur.close()
 
 
-    def get_user_by_user_id(dbCur, userid):
+    def get_user_by_user_id(self, dbCur, userid):
         try:
             logging.debug("Getting user: %s", userid)
             # dbCur = db.cursor()
@@ -94,7 +94,7 @@ class Users:
 
 
 
-    def get_user_by_user_name(dbCur, username):
+    def get_user_by_user_name(self, dbCur, username):
         try:
             logging.debug("Getting user: %s", username)
             # dbCur = db.cursor()
@@ -106,6 +106,40 @@ class Users:
             logging.error("Error: %s", err)
             dbCur.close()
 
+
+    def get_user_score_board(self, dbCur, username): 
+        try:
+            usersList = []
+            logging.debug("Getting scoreboard for user: %s", username)
+            dbCur.execute('SELECT users.username as user1, users.user_id, games.username_id_one, games.username_id_two, games.winner_user_id, games.date_played FROM users JOIN games ON games.username_id_one = users.user_id OR games.username_id_two = users.user_id WHERE (users.username = %s AND games.active_game = False)', (username,))
+            users = (dbCur.fetchall())
+            for user in users:
+                logging.debug("getting all scores for user")
+                usersName = user['user1']
+                usersId = user['user_id']
+                usernameIdOne = user['username_id_one']
+                usernameIdTwo = user['username_id_two']
+                winnersId = user['winner_user_id']
+
+                returnUserOne = usersName
+
+                if usersId == usernameIdOne:
+                    returnUserTwo = (self.get_user_by_user_id(self, dbCur, usernameIdTwo))['username']
+                else: 
+                    returnUserTwo = (self.get_user_by_user_id(self, dbCur, usernameIdOne))['username']
+                if usersId == winnersId:
+                    logging.debug("user: %s was the winner for this game", usersName)
+                    returnWinner = returnUserOne
+                else:
+                    logging.debug("user: %s was not the winner for this game", usersName)
+                    returnWinner = returnUserTwo
+                
+                singleUser = {'user':returnUserOne, 'opponent':returnUserTwo, 'winner':returnWinner, 'datePlayed':user['date_played']}
+                usersList.append(singleUser)
+            return usersList
+        except Error as err:
+            logging.error("Error: %s", err)
+            dbCur.close()
 
     # def get_all_users(db):
     #     try:

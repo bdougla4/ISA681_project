@@ -37,7 +37,20 @@
 
             {% if scoresRetrieved is defined and scoresRetrieved %}
             <h2>Viewing scores for user: {{username}}</h2>
-            {{scoresRetrieved}}
+            {% if userFinalScores is defined and userFinalScores %}
+                <h3>User's Overall Win / Loss Ratio:</h3>
+                <h4>Wins: <span> {{userFinalScores.win}} </span> -- Losses: <span> {{userFinalScores.loss}} </span></h4>
+            {% endif %}
+            <h3>Games Played:</h3>
+            <ol>
+                {% for score in scoresRetrieved %}
+                <li>
+                    score
+                    User: {{score.user}} -- Opponent: {{score.opponent}} -- Winner: {{score.winner}} -- Date Played: {{score.datePlayed}}
+                </li>
+                {% endfor %}
+            </ol>
+            <!-- {{scoresRetrieved}} -->
             {% endif %}
 
             <div></div>
