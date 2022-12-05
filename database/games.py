@@ -40,7 +40,6 @@ class Games:
             logging.error("Error: %s", err)
             dbCur.close()
             
-    # TO-DO: if the game was forfeited or closed, who wins?
     def game_finished(self, dbCur, user_one, user_two, winner):
         try:
             gameId = self.get_all_active_games_by_both_user_id(dbCur, user_one, user_two)
@@ -66,21 +65,22 @@ class Games:
                 return row
         except Error as err:
             logging.error("Error: %s", err)
-            db.close()
+            dbCur.close()
 
 
     # gets all games played by one specific user
-    def get_all_games_by_single_user_id(db, username):
+    def get_all_games_by_single_user_id(dbCur, username):
         try:
             logging.debug("Getting all games played by user: %s", username)
-            dbCur = db.cursor()
-            dbCur.execute('SELECT * FROM games where username_id_one = %s OR username_id_two = %s', (username,))
-            for row in dbCur.fetchall():
-                logging.debug(row)
+            # dbCur = db.cursor()
+            dbCur.execute('SELECT * FROM games where (username_id_one = %s OR username_id_two = %s) AND active_game = False', (username,username))
+            return dbCur.fetchall()
+            # for row in dbCur.fetchall():
+            #     return row
             # TO-DO add return statement if needed
         except Error as err:
             logging.error("Error: %s", err)
-            db.close()
+            dbCur.close()
 
     # gets all the games played by two specific players
     def get_all_games_by_both_user_id(db, user_one, user_two):

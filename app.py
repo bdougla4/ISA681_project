@@ -6,6 +6,7 @@ import re
 import bcrypt
 import logging
 from database.games import *
+from database.users import *
 #Loding .env file to keep database username/passwords from being hardcoded into source code. 
 from dotenv import load_dotenv
 load_dotenv()
@@ -13,6 +14,9 @@ load_dotenv()
 from flaskext.mysql import MySQL
 import mysql.connector
 '''
+
+userid = '364952648'
+userid2 = '1356773521'
 
 app = Flask(__name__)
 app.secret_key = os.urandom(12)
@@ -122,11 +126,10 @@ def board():
 
 @app.route('/menu/', methods=['GET', 'POST'])
 def menu():
-    username = 364952648
     activeGame = False
     logging.info("checking if user has active game")
     dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
-    if Games.get_all_active_games_for_single_user_id(dbCur, username) != None:
+    if Games.get_all_active_games_for_single_user_id(dbCur, userid) != None:
         activeGame = True 
         logging.info("user has active game")
 
@@ -135,43 +138,51 @@ def menu():
 
 @app.route('/end-game/', methods=['GET', 'POST'])
 def forfeitGame():
-    username = 364952648
-    username2 = 1356773521
+    # TO-DO: get userid from actual user
     dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
-    logging.info("user: %s forfeited game", username)
+    logging.info("user: %s forfeited game", userid)
 
-    # TO-DO get the correct username to mark as winner
-    Games.game_finished(Games, dbCur, username, username2, username2)
+    # TO-DO get the correct userid to mark as winner
+    Games.game_finished(Games, dbCur, userid, userid2, userid2)
+    # TO-DO get the correct userid to mark as winner
+    Users.set_user_lost(Users, dbCur, userid)
+    # TO-DO get the correct userid to mark as winner
+    Users.set_user_won(Users, dbCur, userid2)
+
     db.connection.commit()
     return render_template('menu.html', activeGame=False, gameForfeited=True)
 
 @app.route('/scoreboard/', methods=['GET', 'POST'])
 def scoreboard():
-    print(request.args)
     if request.method == 'GET' and (('username' in request.args) or 
     ('user-score' in request.args) or ('self-score' in request.args)):
-        # print(request.args)
-        
-        # str(escape(request.form["username"]))
-        # elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-        # pattern="[A-Za-z]{50} | [^@]+@[^@]+\.[^@]+">
         username = request.args.get('username')
-        print('username: ')
-        print(username)
         if (username != ''):
             username = str(escape(username))
-            if ((re.match(r'[^@]+@[^@]+\.[^@]+', username)) or (re.match(r'[A-Za-z]{1,50}', username))):
-                print('good username format')
+            logging.info('user is requesting score for user: %s', username)
+            # if ((re.match(r'[^@]+@[^@]+\.[^@]+', username)) or (re.match(r'[A-Za-z]{1,50}', username))):
+
+            if re.match(r'[A-Za-z0-9]{1,50}', username):
+                logging.info('%s is good username format', username)
             else:
-                print('bad username format')
-        # print('username: ')
-        # print(username)
-        # if user requests to see another user's score:
+                print('%s is bad username format', username)
+
         userScore = request.args.get('user-score')
-        # if user requests to see their own scores:
-        selfScore = request.args.get('self-score')            
+        selfScore = request.args.get('self-score')       
 
+        dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
+        if((userScore == None) or (userScore == '')):
+            logging.info('getting score for current user: %s', username)
+            # TO-DO: get username for current user
+            scoresRetrieved = Users.get_user_by_user_name(dbCur, 'user1')
+            print(scoresRetrieved)
+            return render_template('scoreboard.html', scoresRetrieved=scoresRetrieved, username='user1')
 
+        else:
+            logging.info('getting score for another user: %s', username)
+            scoresRetrieved = Users.get_user_by_user_name(dbCur, username)
+            print(scoresRetrieved)
+            return render_template('scoreboard.html', scoresRetrieved=scoresRetrieved, username=username)   
 
     return render_template('scoreboard.html')
 

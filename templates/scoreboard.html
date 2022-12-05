@@ -22,14 +22,13 @@
             </form> -->
 
             <form action="{{ url_for('scoreboard') }}" method="GET">
-                <h2>Enter the username or email of the player whose scores you would like to view:</h2>
-
-                {% if invalidUsername is defined and invalidUsername %}
-                    <alert>Invalid Username Format</alert>
-                {% endif %}
+                <h2>Enter the username of the player whose scores you would like to view:</h2>
                 <!-- TO-DO: how are we formatting username? -->
-                <input type="text" name="username" placeholder="Username or Email" id="username" 
-                pattern="(^[A-Za-z]{1,50}$)|(^[^@]+@[^@]+\.[^@]+$)">
+                <input type="text" name="username" placeholder="Username" id="username" 
+                pattern="(^[A-Za-z0-9]{1,50}$)">
+                <!-- pattern="(^[A-Za-z]{1,50}$)|(^[^@]+@[^@]+\.[^@]+$)"> -->
+
+
                 <button name="user-score" value="user-score">Search User Scores</button>
 
                 <h2>Or view your own scores:</h2>
@@ -38,6 +37,7 @@
 
             {% if scoresRetrieved is defined and scoresRetrieved %}
             <h2>Viewing scores for user: {{username}}</h2>
+            {{scoresRetrieved}}
             {% endif %}
 
             <div></div>
