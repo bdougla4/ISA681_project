@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS scrabble.login
 (
 	login_id INT PRIMARY KEY,
 	username VARCHAR(50) UNIQUE NOT NULL,
-	password VARCHAR(50) NOT NULL,
+	password VARCHAR(255) NOT NULL,
 	salt varchar(40) NOT NULL,
 	actively_logged_in BOOLEAN NOT NULL,
 	last_log_in DATE,
@@ -18,12 +18,12 @@ CREATE TABLE IF NOT EXISTS scrabble.login
 );
 
 
-CREATE TABLE IF NOT EXISTS scrabble.users
+CREATE TABLE IF NOT EXISTS scrabble.user_WL
 (
 	user_id INT PRIMARY KEY,
 	username VARCHAR(50) UNIQUE NOT NULL,
-	win INT,
-	loss INT
+	wins INT,
+	losses INT
 );
 
 CREATE TABLE IF NOT EXISTS scrabble.games
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS scrabble.moves
 (
 	move_id INT PRIMARY KEY,
 	game_id INT,
-	word_created VARCHAR(8),
+	word_created VARCHAR(30),
 	turn_skipped BOOLEAN NOT NULL,
 	column_num INT,
 	row_num INT,
