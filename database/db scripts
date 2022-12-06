@@ -118,7 +118,8 @@ CREATE TABLE IF NOT EXISTS scrabble.moves
 	turn_skipped BOOLEAN NOT NULL,
 	column_num INT,
 	row_num INT,
-	position_played VARCHAR(8)
+	position_played VARCHAR(8),
+	move_number INT
 );
 
 

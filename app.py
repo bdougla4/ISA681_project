@@ -7,6 +7,7 @@ import bcrypt
 import logging
 from database.games import *
 from database.users import *
+from database.moves import *
 #Loding .env file to keep database username/passwords from being hardcoded into source code. 
 from dotenv import load_dotenv
 load_dotenv()
@@ -136,6 +137,28 @@ def menu():
     logging.info("active game = %s", activeGame)
     return render_template('menu.html', activeGame=activeGame, gameForfeited=False)
 
+@app.route('/new-game/', methods=['GET', 'POST'])
+def newGame():
+    # TO-DO: get userid from actual user
+    dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
+    logging.debug("user: %s is requesting to join new game", userid)
+
+    logging.debug("Making sure user does not have an active game already")
+    # TO-DO get the correct userid to check for active games
+    activeGames = Games.get_all_active_games_for_single_user_id(dbCur, userid)
+
+    if activeGames != None:
+        logging.warn('User: %s is requesting a new game but already has an active one running', userid)
+    else:
+        logging.debug('User has no active games currently. Creating a new game')
+        # TO-DO: how to get a second user to join this game?
+        # TO-DO get the correct userids
+        Games.add_game(dbCur, userid, userid2)
+        db.connection.commit()
+
+        return render_template('game.html')
+    
+
 @app.route('/end-game/', methods=['GET', 'POST'])
 def forfeitGame():
     # TO-DO: get userid from actual user
@@ -144,11 +167,13 @@ def forfeitGame():
 
     # TO-DO get the correct userid to mark as winner
     Games.game_finished(Games, dbCur, userid, userid2, userid2)
+
     # TO-DO get the correct userid to mark as winner
     Users.set_user_lost(Users, dbCur, userid)
+
     # TO-DO get the correct userid to mark as winner
     Users.set_user_won(Users, dbCur, userid2)
-
+    
     db.connection.commit()
     return render_template('menu.html', activeGame=False, gameForfeited=True)
 
@@ -186,11 +211,19 @@ def scoreboard():
             userFinalScores = Users.get_user_by_user_name(Users, dbCur, username)
         else:
             noScores = True
-
         return render_template('scoreboard.html', scoresRetrieved=scoresRetrieved, username=username, userFinalScores=userFinalScores, noScores=noScores)   
-
     return render_template('scoreboard.html')
 
+@app.route('/moves/', methods=['GET', 'POST'])
+def getMoves():
+    gameId = request.args.get('gameId')
+    logging.debug('getting moves for gameId: %s', gameId)
+
+    dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
+    gameMoves = Moves.get_all_moves_for_game(dbCur, gameId)
+
+    print(gameMoves)
+    return render_template('moves.html', gameMoves=gameMoves)
 
 if __name__ == "__main__":
     app.run()

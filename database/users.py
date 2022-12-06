@@ -111,7 +111,7 @@ class Users:
         try:
             usersList = []
             logging.debug("Getting scoreboard for user: %s", username)
-            dbCur.execute('SELECT users.username as user1, users.user_id, games.username_id_one, games.username_id_two, games.winner_user_id, games.date_played FROM users JOIN games ON games.username_id_one = users.user_id OR games.username_id_two = users.user_id WHERE (users.username = %s AND games.active_game = False)', (username,))
+            dbCur.execute('SELECT games.game_id, users.username as user1, users.user_id, games.username_id_one, games.username_id_two, games.winner_user_id, games.date_played FROM users JOIN games ON games.username_id_one = users.user_id OR games.username_id_two = users.user_id WHERE (users.username = %s AND games.active_game = False)', (username,))
             users = (dbCur.fetchall())
             for user in users:
                 logging.debug("getting all scores for user")
@@ -134,7 +134,7 @@ class Users:
                     logging.debug("user: %s was not the winner for this game", usersName)
                     returnWinner = returnUserTwo
                 
-                singleUser = {'user':returnUserOne, 'opponent':returnUserTwo, 'winner':returnWinner, 'datePlayed':user['date_played']}
+                singleUser = {'gameId':user['game_id'], 'user':returnUserOne, 'opponent':returnUserTwo, 'winner':returnWinner, 'datePlayed':user['date_played']}
                 usersList.append(singleUser)
             return usersList
         except Error as err:

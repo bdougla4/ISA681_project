@@ -4,7 +4,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Menu</title>
+    <title>Scoreboard and Moves</title>
     <!link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://localhost/scoreboard/">
 </head>
@@ -22,7 +22,7 @@
             </form> -->
 
             <form action="{{ url_for('scoreboard') }}" method="GET">
-                <h2>Enter the username of the player whose scores you would like to view:</h2>
+                <h2>Enter the username of the player whose scores / moves you would like to view:</h2>
                 <!-- TO-DO: how are we formatting username? -->
                 <input type="text" name="username" placeholder="Username" id="username" 
                 pattern="(^[A-Za-z0-9]{1,50}$)">
@@ -31,7 +31,7 @@
 
                 <button name="user-score" value="user-score">Search User Scores</button>
 
-                <h2>Or view your own scores:</h2>
+                <h2>Or view your own scores / moves:</h2>
                 <button name="self-score" value="self-score">View my Scores</button>
             </form>
 
@@ -47,11 +47,11 @@
                 <h4>Wins: <span> {{userFinalScores.win}} </span> -- Losses: <span> {{userFinalScores.loss}} </span></h4>
             {% endif %}
             <h3>Games Played:</h3>
+            <h4>(Click on the Game ID to view the moves for that game)</h4>
             <ol>
                 {% for score in scoresRetrieved %}
                 <li>
-                    score
-                    User: {{score.user}} -- Opponent: {{score.opponent}} -- Winner: {{score.winner}} -- Date Played: {{score.datePlayed}}
+                    <a href="{{url_for('getMoves', gameId=score.gameId)}}">Game ID: {{score.gameId}}</a> -- User: {{score.user}} -- Opponent: {{score.opponent}} -- Winner: {{score.winner}} -- Date Played: {{score.datePlayed}}
                 </li>
                 {% endfor %}
             </ol>

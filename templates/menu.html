@@ -25,12 +25,15 @@
             </form>
             
             {% else %}
-            <h3>Find New Game</h3>
-            <button>Start New Game</button>
+            <h3>Join a New Game</h3>
+            <a href="{{url_for('newGame')}}">
+                <button>Join New Game</button>
+            </a>
+
             {% endif %}
-            <h3>View Scoreboard</h3>
+            <h3>View Scoreboard and Recorded Moves Per Game</h3>
             <a href="{{url_for('scoreboard')}}">
-                <button>View Scoreboard</button>
+                <button>View Scoreboard / Moves</button>
             </a>
 		</div>
 	</body>

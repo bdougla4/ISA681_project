@@ -7,21 +7,21 @@ import MySQLdb.cursors
 get_all_active_games_by_both_user_id = None
 
 class Games:
-    def add_game(db, user_one, user_two):
+    def add_game(dbCur, user_one, user_two):
         try:
             id = random.getrandbits(32)
             # TO-DO: do we want to pass in the db? or the cursor? or initialize it every time?
-            dbCur = db.cursor()
+            # dbCur = db.cursor()
             logging.debug("Adding game into db")
             dbCur.execute("INSERT into games(game_id, username_id_one, username_id_two, winner_user_id, date_played, active_game) values(%s, %s, %s, %s, %s, %s)", 
             (id, user_one, user_two, None, date.today(), True))
             # TO-DO: are we ok with how I create the game_id?
-            db.commit()
+            # db.commit()
             logging.info("Inserted game with id: %s", str(id))
             return id
         except Error as err:
             logging.error("Error: %s", err)
-            db.close()
+            dbCur.close()
 
 
     # gets all ACTIVE games played by two specific players
@@ -59,7 +59,7 @@ class Games:
             # dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
             logging.debug("Getting active game played by user: %s", username)
             # dbCur = db.cursor()
-            dbCur.execute('SELECT * FROM games where username_id_one = %s OR username_id_two = %s AND active_game = True', (username, username))
+            dbCur.execute('SELECT * FROM games where (username_id_one = %s OR username_id_two = %s) AND active_game = True', (username, username))
             for row in dbCur.fetchall():
                 logging.debug(row)
                 return row

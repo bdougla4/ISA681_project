@@ -18,15 +18,21 @@ class Moves:
             db.close()
 
 
-    def get_all_moves_for_game(db, gameId):
+    def get_all_moves_for_game(dbCur, gameId):
         logging.debug("Getting all moves for game_id: %s", str(gameId))
         try:
-            dbCur = db.cursor()
-            dbCur.execute("SELECT * FROM moves where game_id = %s", (gameId,))
+            movesList = []
+            # dbCur = db.cursor()
+            dbCur.execute("SELECT username, move_number, word_created, points, turn_skipped, column_num, row_num, position_played FROM moves JOIN games ON games.game_id = moves.game_id JOIN users ON moves.user_id = users.user_id WHERE (moves.game_id = %s AND games.active_game = False) ORDER BY move_number ASC", (gameId,))
             moves = dbCur.fetchall()
-            for row in moves:
-                logging.debug(row)
-            return moves
+
+            for move in moves:
+                if move['turn_skipped'] == 0:
+                    move['turn_skipped'] = False
+                else:
+                    move['turn_skipped'] = True
+                movesList.append(move)
+            return movesList
         except Error as err:
             logging.error("Error: %s", err)
-            db.close()
+            dbCur.close()
