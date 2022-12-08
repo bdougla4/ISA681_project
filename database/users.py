@@ -111,14 +111,14 @@ class Users:
         try:
             usersList = []
             logging.debug("Getting scoreboard for user: %s", username)
-            dbCur.execute('SELECT games.game_id, users.username as user1, users.user_id, games.username_id_one, games.username_id_two, games.winner_user_id, games.date_played FROM users JOIN games ON games.username_id_one = users.user_id OR games.username_id_two = users.user_id WHERE (users.username = %s AND games.active_game = False)', (username,))
+            dbCur.execute('SELECT games.game_id, users.username as user1, users.user_id, games.user_id_one, games.user_id_two, games.winner_user_id, games.date_played FROM users JOIN games ON games.user_id_one = users.user_id OR games.user_id_two = users.user_id WHERE (users.username = %s AND games.active_game = False)', (username,))
             users = (dbCur.fetchall())
             for user in users:
                 logging.debug("getting all scores for user")
                 usersName = user['user1']
                 usersId = user['user_id']
-                usernameIdOne = user['username_id_one']
-                usernameIdTwo = user['username_id_two']
+                usernameIdOne = user['user_id_one']
+                usernameIdTwo = user['user_id_two']
                 winnersId = user['winner_user_id']
 
                 returnUserOne = usersName

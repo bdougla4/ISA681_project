@@ -13,12 +13,22 @@ class Games:
             # TO-DO: do we want to pass in the db? or the cursor? or initialize it every time?
             # dbCur = db.cursor()
             logging.debug("Adding game into db")
-            dbCur.execute("INSERT into games(game_id, username_id_one, username_id_two, winner_user_id, date_played, active_game) values(%s, %s, %s, %s, %s, %s)", 
-            (id, user_one, user_two, None, date.today(), True))
+            dbCur.execute("INSERT into games(game_id, user_id_one, user_id_two, user_id_one_score, user_id_two_score, winner_user_id, date_played, active_game, current_users_turn) values(%s, %s, %s, %s, %s, %s, %s, %s, %s)", 
+            (id, user_one, user_two, 0, 0, None, date.today(), True, user_one))
             # TO-DO: are we ok with how I create the game_id?
             # db.commit()
             logging.info("Inserted game with id: %s", str(id))
             return id
+        except Error as err:
+            logging.error("Error: %s", err)
+            dbCur.close()
+
+    def get_game_by_id(dbCur, gameId):
+        try:
+            logging.debug("Getting game by id: %s", gameId)
+            dbCur.execute("SELECT * FROM games where game_id = %s", (gameId,))
+            game = returnedValue = dbCur.fetchone()
+            return game
         except Error as err:
             logging.error("Error: %s", err)
             dbCur.close()
@@ -28,7 +38,7 @@ class Games:
     def get_all_active_games_by_both_user_id(dbCur, user_one, user_two):
         try:
             logging.debug("Getting all ACTIVE games played by users: %s and %s", user_one, user_two)
-            dbCur.execute('SELECT game_id FROM games where ((username_id_one = %s AND username_id_two = %s) OR (username_id_one = %s AND username_id_two = %s)) AND active_game = True', 
+            dbCur.execute('SELECT game_id FROM games where ((user_id_one = %s AND user_id_two = %s) OR (user_id_one = %s AND user_id_two = %s)) AND active_game = True', 
                 (user_one, user_two, user_two, user_one))
             returnedValue = dbCur.fetchone()
             if returnedValue != None:
@@ -59,7 +69,7 @@ class Games:
             # dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
             logging.debug("Getting active game played by user: %s", username)
             # dbCur = db.cursor()
-            dbCur.execute('SELECT * FROM games where (username_id_one = %s OR username_id_two = %s) AND active_game = True', (username, username))
+            dbCur.execute('SELECT * FROM games where (user_id_one = %s OR user_id_two = %s) AND active_game = True', (username, username))
             for row in dbCur.fetchall():
                 logging.debug(row)
                 return row
@@ -73,7 +83,7 @@ class Games:
         try:
             logging.debug("Getting all games played by user: %s", username)
             # dbCur = db.cursor()
-            dbCur.execute('SELECT * FROM games where (username_id_one = %s OR username_id_two = %s) AND active_game = False', (username,username))
+            dbCur.execute('SELECT * FROM games where (user_id_one = %s OR user_id_two = %s) AND active_game = False', (username,username))
             return dbCur.fetchall()
             # for row in dbCur.fetchall():
             #     return row
@@ -87,7 +97,7 @@ class Games:
         try:
             logging.debug("Getting all games played by users: %s and %s", user_one, user_two)
             dbCur = db.cursor()
-            dbCur.execute('SELECT * FROM games where (username_id_one = %(user_one)s AND username_id_two = %(user_two)s) OR (username_id_one = %(user_two)s AND username_id_two = %(user_one)s)', 
+            dbCur.execute('SELECT * FROM games where (user_id_one = %(user_one)s AND user_id_two = %(user_two)s) OR (user_id_one = %(user_two)s AND user_id_two = %(user_one)s)', 
                 {'user_one': user_one}, {'user_two': user_two})
             for row in dbCur.fetchall():
                 logging.debug(row)

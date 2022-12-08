@@ -11,6 +11,33 @@
 			<h1>ISA681 Scrabble </h1>
 
 			<!-- usernames, user scores, timer, and player's turn should be displayed at all times -->
+			<h2>Player's turn: {{playerStats.currentUsersTurn}}</h2>
+			<h2>{{playerStats.playerOne}}'s score:': {{playerStats.playerOneScore}}</h2>
+			<h2>{{playerStats.playerTwo}}'s score:': {{playerStats.playerTwoScore}}</h2>
+			
+			<form action="{{ url_for('game', playerStats=playerStats, gameStatus='continue')}}" method="POST">
+				<h2>Create a word longer than 2 letters using the letters in your rack, or enter ### to skip a turn</h2>
+				<input type="text" name="user-word" placeholder="Enter word" id="user-word" 
+				pattern="(^([A-Za-z]{2,7}|###)$)">
+				
+				<h2>Enter position for your word. "Right" or "Down":</h2>
+				<input type="text" name="user-position" placeholder="Enter position" id="user-position" 
+				pattern="(^(([rR][iI][gG][hH][tT])|([dD][oO][wW][nN]))$)">
+				<button name="submit-user-input" value="submit-user-input">Submit Position and Word</button>
+
+
+
+                <!-- <h2>Or view your own scores / moves:</h2>
+                <button name="self-score" value="self-score">View my Scores</button> -->
+            </form>
+			<div></div>
+            <a href="{{url_for('menu')}}">
+                <button>Back to Menu</button>            
+            </a>
+
+
+			<h1>GAME BOARD HERE</h1>
+
 		</div>
 	</body>
 </html>

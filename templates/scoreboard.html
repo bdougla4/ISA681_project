@@ -11,15 +11,6 @@
 <body>
 		<div class="scoreboard">
 			<h1>Scoreboard</h1>
-            <!-- {% if gameForfeited is defined and gameForfeited %}
-            <alert>Game was Forfeited.</alert>
-            {% endif %}
-
-            <h2>Enter the username or email of the player whose scores you would like to view:</h2>
-            <form action="/scores">
-                <input type="text" name="username" placeholder="Username or Email" id="username">
-                <button name="score" value="user-score">Search User Scores</button>
-            </form> -->
 
             <form action="{{ url_for('scoreboard') }}" method="GET">
                 <h2>Enter the username of the player whose scores / moves you would like to view:</h2>

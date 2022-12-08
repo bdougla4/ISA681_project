@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS scrabble.users
 CREATE TABLE IF NOT EXISTS scrabble.games
 (
 	game_id BIGINT PRIMARY KEY,
-	username_id_one BIGINT NOT NULL,
-	username_id_two BIGINT NOT NULL,
+	user_id_one BIGINT NOT NULL,
+	user_id_two BIGINT NOT NULL,
 	win BOOLEAN NOT NULL,
 	date_played date NOT NULL,
 	active_game BOOLEAN NOT NULL
@@ -49,11 +49,11 @@ CREATE TABLE IF NOT EXISTS scrabble.moves
 
 
 ALTER TABLE IF EXISTS scrabble.games
-	ADD FOREIGN KEY(username_id_one)
+	ADD FOREIGN KEY(user_id_one)
 	REFERENCES scrabble.users(user_id)
 	ON DELETE SET NULL;
 ALTER TABLE IF EXISTS scrabble.games
-	ADD FOREIGN KEY(username_id_two)
+	ADD FOREIGN KEY(user_id_two)
 	REFERENCES scrabble.users(user_id)
 	ON DELETE SET NULL;
 
@@ -101,11 +101,14 @@ CREATE TABLE IF NOT EXISTS scrabble.users
 CREATE TABLE IF NOT EXISTS scrabble.games
 (
 	game_id BIGINT PRIMARY KEY,
-	username_id_one BIGINT NOT NULL,
-	username_id_two BIGINT NOT NULL,
+	user_id_one BIGINT NOT NULL,
+	user_id_two BIGINT NOT NULL,
+	user_id_one_score INT NOT NULL,
+	user_id_two_score INT NOT NULL,
 	winner_user_id BIGINT,
 	date_played date NOT NULL,
-	active_game BOOLEAN NOT NULL
+	active_game BOOLEAN NOT NULL,
+	current_users_turn BIGINT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS scrabble.moves
@@ -123,9 +126,9 @@ CREATE TABLE IF NOT EXISTS scrabble.moves
 );
 
 
-ALTER TABLE scrabble.games ADD CONSTRAINT `games_user_id_fk_1` FOREIGN KEY (`username_id_one`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE scrabble.games ADD CONSTRAINT `games_user_id_fk_1` FOREIGN KEY (`user_id_one`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
-ALTER TABLE scrabble.games ADD CONSTRAINT `games_user_id_fk_2` FOREIGN KEY (`username_id_two`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE scrabble.games ADD CONSTRAINT `games_user_id_fk_2` FOREIGN KEY (`user_id_two`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 ALTER TABLE scrabble.games ADD CONSTRAINT `games_user_id_fk_3` FOREIGN KEY (`winner_user_id`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
