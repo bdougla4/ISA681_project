@@ -4,12 +4,17 @@ import MySQLdb.cursors
 import os
 import re
 import bcrypt
-import datetime as dt
-
+import logging
+from database.games import *
+from database.users import *
+from database.moves import *
+#from game_play import *
 # Loading .env file to keep database username/passwords from being hardcoded into source code.
 from dotenv import load_dotenv
-
 load_dotenv()
+
+# Logging functionalilty for informational (and debugging).
+logging.basicConfig(filename='app.log', filemode='a', encoding='utf-8', level=logging.DEBUG)
 
 app = Flask(__name__)
 app.secret_key = os.urandom(12)
@@ -23,9 +28,24 @@ app.config['MYSQL_DB'] = os.getenv('DB_Scrabble')
 db = MySQL(app)
 
 
+app = Flask(__name__)
+app.secret_key = os.urandom(12)
+
+app.config['MYSQL_HOST'] = os.getenv('DB_HOST')
+app.config['MYSQL_USER'] = os.getenv('DB_SCRABBLE')
+app.config['MYSQL_PASSWORD'] = os.getenv('DB_SCRABBLE_PWD')
+app.config['MYSQL_DB'] = os.getenv('DB_Scrabble')
+
+# Connecting to MySQL database (MYSQL_DB)
+db = MySQL(app)
+# TO-DO: do we want to log things to a file?
+
+# GLOBAL VARIABLES
+attempts = 0  # logging number of password entry attempts for a user.
+
 @app.route("/")
 def homepage():
-    """ISA Scrabble general homepage for users to Login database, Register or Reset password"""
+    """ISA Scrabble general homepage for users to Login, Register View Stats, and Play. """
     return render_template('index.html')
 
 
@@ -37,8 +57,8 @@ def login():
     Function takes user input from the login.html form, escapes the contents and compares the provided credentials with
     the stored information in the database.
     """
-
     if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
+        logging.info("Login request: %s" % (request.form["username"]))
         cursor = db.connection.cursor(MySQLdb.cursors.DictCursor)
 
         # properly escaping user input to avoid XSS
@@ -49,28 +69,29 @@ def login():
         cursor.execute("SELECT * from login where username='" + username + "'")
         account = cursor.fetchone()
 
+
         if account is None:
             msg = "No account with that name. Would you like to Register?"
-            print("msg " + msg)
+            logging.info("Login request redirected to registration for %s" % escape(request.form["username"]))
             return render_template("index.html", msg=msg)
         else:
             # check if correct password was entered
-            salt = account['salt'].encode('utf-8')
-            entered_pswd = bcrypt.hashpw(password, salt)
 
-            if entered_pswd == account['password'].encode('utf-8'):
+            salt = account['salt'].encode('utf-8')
+            enteredPswd = bcrypt.hashpw(password, salt)
+
+            if enteredPswd == account['password'].encode('utf-8'):
                 session['loggedin'] = True
                 session['id'] = account['login_id']
                 session['name'] = account['username']
                 session['email'] = account['email']
-                session['login_time'] = dt.datetime.now()
-                cursor.execute('UPDATE login SET actively_logged_in=%s WHERE username=%s',
-                               (True, username))
-                db.connection.commit()
                 msg = "Welcome " + username + "!"
+                logging.info("Logging sessionID: %s, user: %s, email: %s." % (session['id'], session['name'],
+                                                                              session['email']))
                 return render_template("user.html", msg=msg)
             else:
                 msg = "Incorrect Username/Password!"
+                logging.info("Invalid login attempt user: %s, email: %s." % (account['username'], account['email']))
                 return render_template('login.html', msg=msg)
     return render_template('login.html')
 
@@ -79,24 +100,12 @@ def login():
 def logout():
     # Remove session data, this will log the user out
     username = session['name']
-    session.pop('actively_logged_in', None)
+    session.pop('loggedin', None)
     session.pop('id', None)
     session.pop('name', None)
 
-    # Updating database to log user out and update logged_out timestamp
-    cursor = db.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute('UPDATE login SET actively_logged_in=%s WHERE username=%s',
-                   (False, username))
-    db.connection.commit()
-
     # Redirect to login page
     return redirect(url_for('login'))
-
-
-@app.route('/reset', methods=['POST'])
-def reset():
-    msg = ''
-    return render_template('register.html', msg=msg)
 
 
 @app.route('/register/', methods=['GET', 'POST'])
@@ -115,23 +124,28 @@ def register():
                 return render_template('login.html', msg=msg)
             elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
                 msg = 'Invalid email address !'
+            elif not re.match(r'[A-Za-z0-9@#$%^&+=]{8,}', escape(request.form['password'])):
+                msg = 'Passwords must be a minimum of 8 characters, contain lower and upper case letters, numbers ' \
+                      'and at least one special character (!, @, # $, ^, % *).'
             elif not username or not password or not email:
                 msg = 'Please complete all required fields.'
             else:
                 # generating salt and hashing password
+                active = False
                 salt = bcrypt.gensalt()
                 password_hash = bcrypt.hashpw(password, salt)
-                # registered = ((dt.datetime.now()).strftime('%Y-%m-%d %H:%M:%S'))
-                active = False
-                cursor.execute('INSERT INTO login (username, email, password, salt, actively_logged_in) '
+                cursor.execute('INSERT INTO login (username, email, password, salt, actively_logged_in)'
                                'VALUES(%s, %s, %s, %s, %s)', (username, email, password_hash, salt, active))
                 db.connection.commit()
+                logging.info("Registering user: %s and updating database %s.login." % (username, app.config['MYSQL_DB']))
                 msg = 'You have successfully registered! \nPlease login.'
                 return render_template('index.html', msg=msg)
         elif request.method == 'POST':
             msg = 'Please complete all required fields.'
+            logging.info("Registration failed for user. Not all fields completed.")
     elif request.method == 'POST':
         msg = 'Please complete all required fields.'
+        logging.info("Registration failed for user. Not all fields completed.")
     return render_template('register.html', msg=msg)
 
 
