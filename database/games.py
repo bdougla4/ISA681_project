@@ -1,7 +1,7 @@
 import random
 import logging
 from mysql.connector import Error
-from datetime import date
+from database.users import *
 import MySQLdb.cursors
 
 get_all_active_games_by_both_user_id = None
@@ -13,8 +13,8 @@ class Games:
             # TO-DO: do we want to pass in the db? or the cursor? or initialize it every time?
             # dbCur = db.cursor()
             logging.debug("Adding game into db")
-            dbCur.execute("INSERT into games(game_id, user_id_one, user_id_two, user_id_one_score, user_id_two_score, winner_user_id, date_played, active_game, current_users_turn) values(%s, %s, %s, %s, %s, %s, %s, %s, %s)", 
-            (id, user_one, user_two, 0, 0, None, date.today(), True, user_one))
+            dbCur.execute("INSERT into games(game_id, user_id_one, user_id_two, user_id_one_score, user_id_two_score, winner_user_id, active_game, current_users_turn) values(%s, %s, %s, %s, %s, %s, %s, %s)", 
+            (id, user_one, user_two, 0, 0, None, True, user_one))
             # TO-DO: are we ok with how I create the game_id?
             # db.commit()
             logging.info("Inserted game with id: %s", str(id))
@@ -32,6 +32,40 @@ class Games:
         except Error as err:
             logging.error("Error: %s", err)
             dbCur.close()
+    
+    def update_game_score(self, dbCur, gameId, userId, userScore):
+        try:
+            logging.debug("Updating user's: %s score for game: %s", userId, gameId)
+            game = self.get_game_by_id(dbCur, gameId)
+            userOne = game['user_id_one']
+            userTwo = game['user_id_two']
+            userOneScore = game['user_id_one_score']
+            userTwoScore = game['user_id_two_score']
+            currentPlayer = game['current_users_turn']
+            # TO-DO: send usernames in via param?
+            playerOne = Users.get_user_by_user_id(Users, dbCur, userOne)
+            playerOneUserName = playerOne['username']
+
+            playerTwo = Users.get_user_by_user_id(Users, dbCur, userTwo)
+            playerTwoUsername = playerTwo['username']
+
+            # current user is user_id_one
+            if str(userId) == str(userOne):
+                userOneScore = userOneScore + userScore
+                logging.debug("setting user's: %s score to: %s", userOne, userOneScore)
+                dbCur.execute("UPDATE games SET user_id_one_score = %s, current_users_turn = %s WHERE game_id = %s", (userOneScore, userTwo, gameId))
+                return({'currentUsersTurn':playerTwoUsername, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername,'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore})
+            # current user is user_id_two
+            else:
+                userTwoScore = userTwoScore + userScore
+                logging.debug("setting user's: %s score to: %s", userTwo, userTwoScore)
+                dbCur.execute("UPDATE games SET user_id_two_score = %s, current_users_turn = %s WHERE game_id = %s", (userTwoScore, userOne, gameId))
+                return({'currentUsersTurn':playerOneUserName, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore})
+
+        except Error as err:
+            logging.error("Error: %s", err)
+            dbCur.close()
+
 
 
     # gets all ACTIVE games played by two specific players
@@ -70,9 +104,8 @@ class Games:
             logging.debug("Getting active game played by user: %s", username)
             # dbCur = db.cursor()
             dbCur.execute('SELECT * FROM games where (user_id_one = %s OR user_id_two = %s) AND active_game = True', (username, username))
-            for row in dbCur.fetchall():
-                logging.debug(row)
-                return row
+            game = dbCur.fetchone()
+            return game
         except Error as err:
             logging.error("Error: %s", err)
             dbCur.close()

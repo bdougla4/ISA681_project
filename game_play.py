@@ -1,6 +1,8 @@
 from PyDictionary import PyDictionary
 from board.bag import LETTER_VALUES
 from database.users import *
+from database.moves import *
+from database.games import *
 import re
 
 
@@ -37,26 +39,39 @@ class GamePlay:
     # calculate the word's score based on the LETTER_VALUE provided in the Bag class
     # TO-DO: add special values?
     def calculate_word_score(self, word):
-        print("calulating score for word: " + word)
+        logging.debug('calulating score for word: %s', word)
         word_score = 0
         for letter in word:
             word_score += LETTER_VALUES[letter.upper()]
-        print("final word score: " + str(word_score))
+        logging.info('final word score: %s', word_score)
         return word_score
 
-    def handle_users_input(self, word, position):
+    def handle_users_input(self, dbCur, gameId, userId, word, position, col, row):
         logging.debug("user's position: %s", position)
         logging.debug("user's word: %s", word)
+        logging.debug("user's col: %s", col)
+        logging.debug("user's row: %s", row)
+        isWord = False
+        wordScore = 0
 
-        if (re.match(r'([A-Za-z]{2,7}|###)', word) and re.match(r'([rR][iI][gG][hH][tT])|([dD][oO][wW][nN])', position)):
-            logging.info('position and word was formatted properly')
-            isWord = self.is_word_in_dictionary(self, word)
-            wordScore = self.calculate_word_score(self, word)
-            ////////////////////////////////////////
-            # add word to db
-            # determine if position is correct
+        # TO-DO: handle ###
+        if (re.match(r'([A-Za-z]{2,7}|###)', word) and re.match(r'([rR][iI][gG][hH][tT])|([dD][oO][wW][nN])', position)
+            and re.match(r'(1[0-5]|[1-9])', col) and re.match(r'(1[0-5]|[1-9])', row)):
+            logging.info('position, word, col, ad row were formatted properly')
+            if(word != "###"):
+                isWord = self.is_word_in_dictionary(self, word)
+            if isWord:
+                logging.info("user's word is a real word")
+                wordScore = self.calculate_word_score(self, word)
+                Moves.add_move(dbCur, gameId, userId, word, wordScore, False, col, row, position)
+                return Games.update_game_score(Games, dbCur, gameId, userId, wordScore)
+            if(word == '###'):
+                logging.info("user skipped turn")
+                Moves.add_move(dbCur, gameId, userId, word, wordScore, True, col, row, position)
+                return Games.update_game_score(Games, dbCur, gameId, userId, wordScore)
         else: 
             logging.info('position and / or word was not formatted properly')
+            
 
         # TO-DO:  DETERMINE IF WORD IS IN VALID POSITION
 
@@ -65,6 +80,7 @@ class GamePlay:
         currentUsersTurn = Users.get_user_by_user_id(Users, dbCur, (currentGame['current_users_turn']))
         currentUsersTurn = currentUsersTurn['username']
 
+        # TO-DO: send usernames in via param?
         playerOne = Users.get_user_by_user_id(Users, dbCur, currentGame['user_id_one'])
         playerOneUserName = playerOne['username']
         playerOneScore = currentGame['user_id_one_score']
@@ -79,6 +95,7 @@ class GamePlay:
         currentUsersTurn = Users.get_user_by_user_id(Users, dbCur, (newGame['current_users_turn']))
         currentUsersTurn = currentUsersTurn['username']
 
+        # TO-DO: send usernames in via param?
         playerOne = Users.get_user_by_user_id(Users, dbCur, newGame['user_id_one'])
         playerOneUserName = playerOne['username']
 

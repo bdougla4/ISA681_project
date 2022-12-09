@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS scrabble.games
 	user_id_one BIGINT NOT NULL,
 	user_id_two BIGINT NOT NULL,
 	win BOOLEAN NOT NULL,
-	date_played date NOT NULL,
+	date_played TIMESTAMP NOT NULL,
 	active_game BOOLEAN NOT NULL
 );
 
@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS scrabble.games
 	user_id_one_score INT NOT NULL,
 	user_id_two_score INT NOT NULL,
 	winner_user_id BIGINT,
-	date_played date NOT NULL,
+	date_played TIMESTAMP NOT NULL,
 	active_game BOOLEAN NOT NULL,
 	current_users_turn BIGINT NOT NULL
 );
@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS scrabble.moves
 	column_num INT,
 	row_num INT,
 	position_played VARCHAR(8),
-	move_number INT
+	date_played TIMESTAMP NOT NULL
 );
 
 

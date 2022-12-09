@@ -135,23 +135,29 @@ def menu():
 
 @app.route('/game/', methods=['GET', 'POST'])
 def game():
+    dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
     if ('gameStatus' in request.args):
         gameStatus = request.args.get('gameStatus')
         if gameStatus == 'continue':
             logging.debug("user wants to continue previous game. checking if user has active game")
-            dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
+            # TO-DO: get user id
             currentGame = Games.get_all_active_games_for_single_user_id(dbCur, userid)
+            currentUsersTurn = currentGame['current_users_turn']
             if currentGame != None:
                 logging.info("user has active game")
                 playerStats = GamePlay.generate_continue_game_stats(dbCur, currentGame)
     if ('submit-user-input' in request.form and 'user-word' in request.form and 
-    'user-position' in request.form):
-        logging.debug('user submitted position and word')
+    'user-position' in request.form and 'col' in request.form and 'row' in request.form):
+        logging.debug('user submitted position, word, row, and column')
         position = str(escape(request.form["user-position"]))
         word = str(escape(request.form["user-word"]))
+        col = str(escape(request.form["col"]))
+        row = str(escape(request.form["row"]))
 
-        GamePlay.handle_users_input(GamePlay, word, position)
-    
+        # TO-DO: make sure it is user's turn when inserting move
+        # TO-DO: get user id
+        playerStats = GamePlay.handle_users_input(GamePlay, dbCur, currentGame['game_id'], currentUsersTurn, word, position, col, row)
+        db.connection.commit()
     return render_template('game.html', gameStatus='continue', playerStats=playerStats)
 
 @app.route('/new-game/', methods=['GET', 'POST'])
@@ -175,7 +181,6 @@ def newGame():
 
         newGame = Games.get_game_by_id(dbCur, gameId)
         playerStats = GamePlay.generate_new_game_stats(dbCur, newGame)
-
         return render_template('game.html', gameStatus='newGame', playerStats=playerStats)
     
 
@@ -199,11 +204,14 @@ def forfeitGame():
 
 @app.route('/scoreboard/', methods=['GET', 'POST'])
 def scoreboard():
-    noScores = False
-    userFinalScores = None
-
+    userScore = request.args.get('user-score')
     if request.method == 'GET' and (('username' in request.args) or 
     ('user-score' in request.args) or ('self-score' in request.args)):
+        if((userScore == None) or (userScore == '')):
+            username = 'user1'
+            logging.debug('user: %s wants to see their own personal scores', username)
+            return generateScoreboard(username)
+
         username = request.args.get('username')
         if (username != ''):
             username = str(escape(username))
@@ -212,27 +220,29 @@ def scoreboard():
 
             if re.match(r'[A-Za-z0-9]{1,50}', username):
                 logging.info('%s is good username format', username)
-                userScore = request.args.get('user-score')
-                selfScore = request.args.get('self-score')       
-
-                dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
-                if((userScore == None) or (userScore == '')):
-                    logging.debug('user: %s wants to see their own personal scores', username)
-                    username = 'user1'
-
-                logging.debug('getting score for user: %s', username)
-                # TO-DO: get username for current user
-                scoresRetrieved = Users.get_user_score_board(Users, dbCur, username)
-                if scoresRetrieved != []:
-                    # TO-DO: get username for current user
-                    userFinalScores = Users.get_user_by_user_name(Users, dbCur, username)
-                else:
-                    noScores = True
-                return render_template('scoreboard.html', scoresRetrieved=scoresRetrieved, username=username, userFinalScores=userFinalScores, noScores=noScores) 
+                # userScore = request.args.get('user-score')     
+                return generateScoreboard(username)
             else:
                 logging.warn('%s is bad username format', username)
   
     return render_template('scoreboard.html')
+
+def generateScoreboard(username):
+    noScores = False
+    userFinalScores = None
+    dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    logging.debug('getting score for user: %s', username)
+    # TO-DO: get username for current user
+    scoresRetrieved = Users.get_user_score_board(Users, dbCur, username)
+    if scoresRetrieved != []:
+        # TO-DO: get username for current user
+        userFinalScores = Users.get_user_by_user_name(Users, dbCur, username)
+    else:
+        noScores = True
+
+    return render_template('scoreboard.html', scoresRetrieved=scoresRetrieved, username=username, userFinalScores=userFinalScores, noScores=noScores) 
+
 
 @app.route('/moves/', methods=['GET', 'POST'])
 def getMoves():
