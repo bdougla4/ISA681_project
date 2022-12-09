@@ -27,7 +27,17 @@ class Games:
         try:
             logging.debug("Getting game by id: %s", gameId)
             dbCur.execute("SELECT * FROM games where game_id = %s", (gameId,))
-            game = returnedValue = dbCur.fetchone()
+            game = dbCur.fetchone()
+            return game
+        except Error as err:
+            logging.error("Error: %s", err)
+            dbCur.close()
+
+    def get_active_game_by_id(dbCur, gameId):
+        try:
+            logging.debug("Getting game by id: %s", gameId)
+            dbCur.execute("SELECT * FROM games where game_id = %s and active_game = True", (gameId,))
+            game = dbCur.fetchone()
             return game
         except Error as err:
             logging.error("Error: %s", err)
@@ -53,13 +63,13 @@ class Games:
             if str(userId) == str(userOne):
                 userOneScore = userOneScore + userScore
                 logging.debug("setting user's: %s score to: %s", userOne, userOneScore)
-                dbCur.execute("UPDATE games SET user_id_one_score = %s, current_users_turn = %s WHERE game_id = %s", (userOneScore, userTwo, gameId))
+                dbCur.execute("UPDATE games SET user_id_one_score = %s, current_users_turn = %s WHERE game_id = %s and active_game = True", (userOneScore, userTwo, gameId))
                 return({'currentUsersTurn':playerTwoUsername, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername,'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore})
             # current user is user_id_two
             else:
                 userTwoScore = userTwoScore + userScore
                 logging.debug("setting user's: %s score to: %s", userTwo, userTwoScore)
-                dbCur.execute("UPDATE games SET user_id_two_score = %s, current_users_turn = %s WHERE game_id = %s", (userTwoScore, userOne, gameId))
+                dbCur.execute("UPDATE games SET user_id_two_score = %s, current_users_turn = %s WHERE game_id = %s and active_game = True", (userTwoScore, userOne, gameId))
                 return({'currentUsersTurn':playerOneUserName, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore})
 
         except Error as err:

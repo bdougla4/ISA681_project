@@ -10,35 +10,38 @@
 		<div class="game">
 			<h1>ISA681 Scrabble </h1>
 
-			<!-- usernames, user scores, timer, and player's turn should be displayed at all times -->
-			<h2>Player's turn: {{playerStats.currentUsersTurn}}</h2>
-			<h2>{{playerStats.playerOne}}'s score: {{playerStats.playerOneScore}}</h2>
-			<h2>{{playerStats.playerTwo}}'s score: {{playerStats.playerTwoScore}}</h2>
+			{% if displayForfeitError is defined and displayForfeitError %}
+				<h2 style="color:red">Other user forfeited during game play. Go back to Menu.</h2>
+			{% else %}
+				<h2>Player's turn: {{playerStats.currentUsersTurn}}</h2>
+				<h2>{{playerStats.playerOne}}'s score: {{playerStats.playerOneScore}}</h2>
+				<h2>{{playerStats.playerTwo}}'s score: {{playerStats.playerTwoScore}}</h2>
+
 			
-			<form action="{{ url_for('game', playerStats=playerStats, gameStatus='continue')}}" method="POST">
-				<h2>Create a word longer than 2 letters using the letters in your rack, or enter ### to skip a turn</h2>
-				<h1>Your rack:    ENTER LETTERS</h1>
-				<input type="text" name="user-word" placeholder="Enter word" id="user-word" 
-				pattern="(^([A-Za-z]{2,7}|###)$)">
-				
-				<h2>Enter position for your word. "Right" or "Down":</h2>
-				<input type="text" name="user-position" placeholder="Enter position" id="user-position" 
-				pattern="(^(([rR][iI][gG][hH][tT])|([dD][oO][wW][nN]))$)">
+				<form action="{{ url_for('game', playerStats=playerStats, gameStatus='continue')}}" method="POST">
+					
+						<h2>Create a word longer than 2 letters using the letters in your rack, or enter ### to skip a turn</h2>
+						{% if displayUndefinedError is defined and displayUndefinedError %}
+						<h2 style="color:red">The word you selected is not a real word. Please try again.</h2>
+						{% endif %}
 
-				<h2>Enter column number for your word (1-15):</h2>
-				<input type="text" name="col" placeholder="Column number" id="col" 
-				pattern="(^1[0-5]|[1-9]$)">
+						<input type="text" name="user-word" placeholder="Enter word" id="user-word" 
+						pattern="(^([A-Za-z]{2,7}|###)$)">
+						
+						<h2>Enter position for your word. "Right" or "Down":</h2>
+						<input type="text" name="user-position" placeholder="Enter position" id="user-position" 
+						pattern="(^(([rR][iI][gG][hH][tT])|([dD][oO][wW][nN]))$)">
 
-				<h2>Enter row number for your word (1-15):</h2>
-				<input type="text" name="row" placeholder="Row number" id="row" 
-				pattern="(^1[0-5]|[1-9]$)">
-				<button name="submit-user-input" value="submit-user-input">Submit Position and Word</button>
+						<h2>Enter column number for your word (1-15):</h2>
+						<input type="text" name="col" placeholder="Column number" id="col" 
+						pattern="(^1[0-5]|[1-9]$)">
 
-
-
-                <!-- <h2>Or view your own scores / moves:</h2>
-                <button name="self-score" value="self-score">View my Scores</button> -->
-            </form>
+						<h2>Enter row number for your word (1-15):</h2>
+						<input type="text" name="row" placeholder="Row number" id="row" 
+						pattern="(^1[0-5]|[1-9]$)">
+						<button name="submit-user-input" value="submit-user-input">Submit Position and Word</button>
+				</form>
+			{% endif %}
 			<div></div>
             <a href="{{url_for('menu')}}">
                 <button>Back to Menu</button>            

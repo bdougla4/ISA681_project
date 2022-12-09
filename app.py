@@ -135,30 +135,45 @@ def menu():
 
 @app.route('/game/', methods=['GET', 'POST'])
 def game():
-    dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
-    if ('gameStatus' in request.args):
-        gameStatus = request.args.get('gameStatus')
-        if gameStatus == 'continue':
-            logging.debug("user wants to continue previous game. checking if user has active game")
+    displayUndefinedError = None
+    displayForfeitError = None
+    playerStats = None
+    try:
+        dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
+        # used in the case that a user enters a non defined word and old stats need to stay on board
+        if ('gameStatus' in request.args):
+            gameStatus = request.args.get('gameStatus')
+            if gameStatus == 'continue':
+                logging.debug("user wants to continue previous game. checking if user has active game")
+                # TO-DO: get user id
+                currentGame = Games.get_all_active_games_for_single_user_id(dbCur, userid)
+                if currentGame != None:
+                    logging.info("user has active game")
+                    currentUsersTurn = currentGame['current_users_turn']
+                    playerStats = GamePlay.generate_continue_game_stats(dbCur, currentGame)
+                else:
+                    raise UserForfeitedException("Other user forfeited during game play")
+        if ('submit-user-input' in request.form and 'user-word' in request.form and 
+        'user-position' in request.form and 'col' in request.form and 'row' in request.form):
+            logging.debug('user submitted position, word, row, and column')
+            position = str(escape(request.form["user-position"]))
+            word = str(escape(request.form["user-word"]))
+            col = str(escape(request.form["col"]))
+            row = str(escape(request.form["row"]))
+            # TO-DO: make sure it is user's turn when inserting move
             # TO-DO: get user id
-            currentGame = Games.get_all_active_games_for_single_user_id(dbCur, userid)
-            currentUsersTurn = currentGame['current_users_turn']
-            if currentGame != None:
-                logging.info("user has active game")
-                playerStats = GamePlay.generate_continue_game_stats(dbCur, currentGame)
-    if ('submit-user-input' in request.form and 'user-word' in request.form and 
-    'user-position' in request.form and 'col' in request.form and 'row' in request.form):
-        logging.debug('user submitted position, word, row, and column')
-        position = str(escape(request.form["user-position"]))
-        word = str(escape(request.form["user-word"]))
-        col = str(escape(request.form["col"]))
-        row = str(escape(request.form["row"]))
+            playerStats = GamePlay.handle_users_input(GamePlay, dbCur, currentGame['game_id'], currentUsersTurn, word, position, col, row)
+            db.connection.commit()
+    except UserForfeitedException as err:
+        logging.warning("Other user forfeited during game play. Displaying error to UI")
+        displayForfeitError = True
+    except UndefinedWordException as err:
+        logging.warning("User's input was invalid. Displaying error to UI")
+        displayUndefinedError = True
 
-        # TO-DO: make sure it is user's turn when inserting move
-        # TO-DO: get user id
-        playerStats = GamePlay.handle_users_input(GamePlay, dbCur, currentGame['game_id'], currentUsersTurn, word, position, col, row)
-        db.connection.commit()
-    return render_template('game.html', gameStatus='continue', playerStats=playerStats)
+            
+    return render_template('game.html', gameStatus='continue', playerStats=playerStats, 
+        displayUndefinedError=displayUndefinedError, displayForfeitError=displayForfeitError)
 
 @app.route('/new-game/', methods=['GET', 'POST'])
 def newGame():

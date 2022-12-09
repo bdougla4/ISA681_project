@@ -1,3 +1,5 @@
+from Exceptions.UndefinedWordException import UndefinedWordException
+from Exceptions.UserForfeitedException import UserForfeitedException
 from PyDictionary import PyDictionary
 from board.bag import LETTER_VALUES
 from database.users import *
@@ -10,7 +12,7 @@ import re
 class GamePlay:
 
     # checks if word is a real English word
-    def is_word_in_dictionary(self, word):
+    def is_word_in_dictionary(word):
         dictionary = PyDictionary()
         try:
             print('Getting definition for word: ' + word)
@@ -38,7 +40,7 @@ class GamePlay:
     
     # calculate the word's score based on the LETTER_VALUE provided in the Bag class
     # TO-DO: add special values?
-    def calculate_word_score(self, word):
+    def calculate_word_score(word):
         logging.debug('calulating score for word: %s', word)
         word_score = 0
         for letter in word:
@@ -54,26 +56,34 @@ class GamePlay:
         isWord = False
         wordScore = 0
 
-        # TO-DO: handle ###
         if (re.match(r'([A-Za-z]{2,7}|###)', word) and re.match(r'([rR][iI][gG][hH][tT])|([dD][oO][wW][nN])', position)
             and re.match(r'(1[0-5]|[1-9])', col) and re.match(r'(1[0-5]|[1-9])', row)):
             logging.info('position, word, col, ad row were formatted properly')
             if(word != "###"):
-                isWord = self.is_word_in_dictionary(self, word)
-            if isWord:
-                logging.info("user's word is a real word")
-                wordScore = self.calculate_word_score(self, word)
-                Moves.add_move(dbCur, gameId, userId, word, wordScore, False, col, row, position)
-                return Games.update_game_score(Games, dbCur, gameId, userId, wordScore)
+                isWord = self.is_word_in_dictionary(word)
+                if isWord:
+                    logging.info("user's word is a real word")
+                    wordScore = self.calculate_word_score(word)
+                    return self.add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, False, col, row, position)
+                else: 
+                    logging.info('position and / or word was not formatted properly')
+                    raise UndefinedWordException("User's word: %s is undefined", word)
             if(word == '###'):
                 logging.info("user skipped turn")
-                Moves.add_move(dbCur, gameId, userId, word, wordScore, True, col, row, position)
-                return Games.update_game_score(Games, dbCur, gameId, userId, wordScore)
-        else: 
-            logging.info('position and / or word was not formatted properly')
-            
+                return self.add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, True, col, row, position)
 
         # TO-DO:  DETERMINE IF WORD IS IN VALID POSITION
+
+    def add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, turnSkipped, col, row, position):
+        # checking in case other user forfeited game in the meantime
+        logging.debug("checking if game is still active")
+        isGameStillActive = Games.get_active_game_by_id(dbCur, gameId)
+        if isGameStillActive != None:
+            logging.debug("game is still active. adding move and updating game")
+            Moves.add_move(dbCur, gameId, userId, word, wordScore, turnSkipped, col, row, position)
+            return Games.update_game_score(Games, dbCur, gameId, userId, wordScore)
+        else: 
+            raise UserForfeitedException("Other user forfeited during game play")
 
     def generate_continue_game_stats(dbCur, currentGame):
         # TO-DO: save these values globally per game to avoid calling it duing every turn
