@@ -88,7 +88,7 @@ def login():
                 msg = "Welcome " + username + "!"
                 logging.info("Logging sessionID: %s, user: %s, email: %s." % (session['id'], session['name'],
                                                                               session['email']))
-                return render_template("user.html", msg=msg)
+                return render_template("menu.html", msg=msg)
             else:
                 msg = "Incorrect Username/Password!"
                 logging.info("Invalid login attempt user: %s, email: %s." % (account['username'], account['email']))
