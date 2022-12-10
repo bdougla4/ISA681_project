@@ -1,0 +1,42 @@
+<!-- TO-DO: if user has existing game, display button to join existing game -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Menu</title>
+    <!link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://localhost/menu/">
+</head>
+<body>
+		<div class="menu">
+			<h1>Menu </h1>
+            {% if gameForfeited is defined and gameForfeited %}
+            <h2 style="color:red">Game was Forfeited.</h2>
+            {% endif %}
+
+            {% if activeGame is defined and activeGame %}
+            <h3>You already have an active game running.</h3>
+            <h3>Continue this game or forfeit it. (Note, you will lose the game if you choose to forfeit.)</h3>
+            <a href="{{url_for('game', gameStatus='continue')}}">
+                <button>Continue Active Game</button>
+            </a>
+            <form action="/end-game">
+                <button id='forfeitGame'>Forfeit Active Game</button>
+                <!-- <button type="submit" value="Send Email" /> -->
+            </form>
+            
+            {% else %}
+            <h3>Join a New Game</h3>
+            <a href="{{url_for('newGame', gameStatus='newGame')}}">
+                <button>Join New Game</button>
+            </a>
+
+            {% endif %}
+            <h3>View Scoreboard and Recorded Moves Per Game</h3>
+            <a href="{{url_for('scoreboard')}}">
+                <button>View Scoreboard / Moves</button>
+            </a>
+		</div>
+	</body>
+</html>

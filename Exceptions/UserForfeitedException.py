@@ -1,0 +1,2 @@
+class UserForfeitedException(Exception):
+    pass

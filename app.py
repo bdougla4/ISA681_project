@@ -1,6 +1,5 @@
 """ ISA681 Scrabble python main file.
     python app.py will get the Scrabble game going.
-
     Authors: Veeda Sherzadah <vsherzad@gmu.edu> & Brienne Douglas (bdougla4@gmu.edu)
     Fall 2022
     December 10, 2022
@@ -16,7 +15,9 @@ import logging
 from database.games import *
 from database.users import *
 from database.moves import *
-# from game_play import *
+from game_play import *
+from board.rack import *
+from board.bag import *
 
 # Loading .env file to keep database username/passwords from being hardcoded into source code.
 from dotenv import load_dotenv
@@ -25,14 +26,11 @@ load_dotenv()
 # Logging functionalilty for informational (and debugging) purposes.
 logging.basicConfig(filename='app.log', filemode='a', encoding='utf-8', level=logging.DEBUG)
 
-userid = '364952648'
-userid2 = '1356773521'
 
 app = Flask(__name__)
 
 # Random 24 bit string for session key.
 app.secret_key = os.urandom(24)
-
 app.config['MYSQL_HOST'] = os.getenv('DB_HOST')
 app.config['MYSQL_USER'] = os.getenv('DB_SCRABBLE')
 app.config['MYSQL_PASSWORD'] = os.getenv('DB_SCRABBLE_PWD')
@@ -42,6 +40,7 @@ app.config['MYSQL_DB'] = os.getenv('DB_Scrabble')
 loginManger = LoginManger()
 loginManger.init_app(app)
 
+
 # Connecting to MySQL database (MYSQL_DB)
 db = MySQL(app)
 
@@ -50,6 +49,7 @@ attempts = 0  # logging number of password entry attempts for a user.
 class User(UserMixin, db):
     cursor = db.connection.cursor(MySQLdb.cursors.DictCursor)
     user = cursor.execute()
+
 
 @app.route("/")
 def homepage():
@@ -63,6 +63,7 @@ def load_user(username):
     Input variable: username must be of type string for correct use. We will use the session['username'] key as the
     username for this function. """
     return User.get(username)
+
 
 @app.route('/login/', methods=['GET', 'POST'])
 def login():
@@ -151,6 +152,12 @@ def register():
                 cursor.execute('INSERT INTO login (username, email, password, salt, actively_logged_in)'
                                'VALUES(%s, %s, %s, %s, %s)', (username, email, password_hash, salt, active))
                 db.connection.commit()
+
+                logging.debug("Created Login. Now creating user for login")
+                loginId = cursor.execute('SELECT login_id FROM login WHERE username = %s', (username,))
+                Users.add_user(cursor, loginId, username)
+                db.connection.commit()
+
                 logging.info("Registering user: %s and updating database %s.login." % (username, app.config['MYSQL_DB']))
                 msg = 'You have successfully registered! \nPlease login.'
                 return render_template('index.html', msg=msg)
@@ -182,34 +189,81 @@ def menu():
 
 @app.route('/game/', methods=['GET', 'POST'])
 def game():
-    """ Function used to continue  """
-    current_users = session['name']
-    dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
-    if ('gameStatus' in request.args):
-        gameStatus = request.args.get('gameStatus')
-        if gameStatus == 'continue':
-            logging.debug("User wants to continue previous game. Checking if user has active game")
+    displayUndefinedError = None
+    displayForfeitError = None
+    displayNotInRackError = None
+    playerStats = None
+    print('')
+    print('')
+    print('')
+    print('in game')
+    print('')
+    print('')
+    print('')
+    print('')
+    print(session['bag'])
+    print('')
+    print('')
+    print('')
+    print('')
+    print(session['rackone'])
+    print(session['racktwo'])
+    print(session['userone'])
+    print(session['usertwo'])
+    print(session['userIdTurn'])
+    print(session['userNameTurn'])
+    print('')
+    print('')
+    print('')
+    print('')
+    print('')
+
+    # TO-DO: determine rack based on user's turn 
+    rack = session['rackone']
+    try:
+        dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
+        # TO-DO: save rack in session
+        # userOneRack = request.args.get('rackOne')
+        # userOneRack = request.args.get('rackTwo')
+        # used in the case that a user enters a non defined word and old stats need to stay on board
+        if ('gameStatus' in request.args):
+            gameStatus = request.args.get('gameStatus')
+            if gameStatus == 'continue':
+                logging.debug("user wants to continue previous game. checking if user has active game")
+                # TO-DO: get user id
+                currentGame = Games.get_all_active_games_for_single_user_id(dbCur, userid)
+                if currentGame != None:
+                    logging.info("user has active game")
+                    # currentUsersTurn = currentGame['current_users_turn']
+                    currentUsersTurn = session['name']
+                    playerStats = GamePlay.generate_continue_game_stats(dbCur, currentGame)
+                else:
+                    raise UserForfeitedException("Other user forfeited during game play")
+        if ('submit-user-input' in request.form and 'user-word' in request.form and 
+        'user-position' in request.form and 'col' in request.form and 'row' in request.form):
+            logging.debug('user submitted position, word, row, and column')
+            position = str(escape(request.form["user-position"]))
+            word = str(escape(request.form["user-word"]))
+            col = str(escape(request.form["col"]))
+            row = str(escape(request.form["row"]))
+            # TO-DO: make sure it is user's turn when inserting move
             # TO-DO: get user id
-            currentGame = Games.get_all_active_games_for_single_user_id(dbCur, userid)
-            currentUsersTurn = currentGame['current_users_turn']
-            if currentGame != None:
-                logging.info("user has active game")
-                playerStats = GamePlay.generate_continue_game_stats(dbCur, currentGame)
-    if ('submit-user-input' in request.form and 'user-word' in request.form and
-            'user-position' in request.form and 'col' in request.form and 'row' in request.form):
-        logging.debug('user submitted position, word, row, and column')
-        position = str(escape(request.form["user-position"]))
-        word = str(escape(request.form["user-word"]))
-        col = str(escape(request.form["col"]))
-        row = str(escape(request.form["row"]))
+            playerStats = GamePlay.handle_users_input(GamePlay, dbCur, currentGame['game_id'], currentUsersTurn, word, position, col, row, rack)
+            rack=playerStats['rack']
+            db.connection.commit()
+    except UserForfeitedException as err:
+        logging.warning("Other user forfeited during game play. Displaying error to UI")
+        displayForfeitError = True
+    except LettersNotInRackException as err:
+        logging.warning("User's input does not use letters in rack. Displaying error to UI")
+        displayNotInRackError = True
+    except UndefinedWordException as err:
+        logging.warning("User's input was invalid. Displaying error to UI")
+        displayUndefinedError = True
 
-        # TO-DO: make sure it is user's turn when inserting move
-        # TO-DO: get user id
-        playerStats = GamePlay.handle_users_input(GamePlay, dbCur, currentGame['game_id'], currentUsersTurn, word,
-                                                  position, col, row)
-        db.connection.commit()
-    return render_template('game.html', gameStatus='continue', playerStats=playerStats)
-
+            
+    return render_template('game.html', gameStatus='continue', playerStats=playerStats, 
+        displayUndefinedError=displayUndefinedError, displayForfeitError=displayForfeitError, displayNotInRackError=displayNotInRackError, rack=rack)
 
 @app.route('/new-game/', methods=['GET', 'POST'])
 def newGame():
@@ -225,16 +279,55 @@ def newGame():
     if activeGames != None:
         logging.warn('User: %s is requesting a new game but already has an active one running', userid)
     else:
-        logging.debug('User has no active games currently. Creating a new game')
-        # TO-DO: how to get a second user to join this game?
+        logging.debug('User has no active games currently.')
+        logging.debug('Creating new bag.')
+        # TO-DO: save bags and racks in session 
+        bag = Bag()
+        logging.debug('Creating new rack.')
+        userOneRack = Rack(bag)
+        userTwoRack = Rack(bag)
+        session['bag'] = bag.get_bag_str()
+        session['rackone'] = userOneRack.get_rack_str()
+        session['racktwo'] = userTwoRack.get_rack_str()
+
+        session['userone'] = session['id']
+        session['usertwo'] = userid2
+
+        session['userIdTurn'] = session['id']
+        session['userNameTurn'] = session['name']
+        print('')
+        print('')
+        print('')
+        print('in new game')
+        print('')
+        print('')
+        print('')
+        print('')
+        print(session['bag'])
+        print('')
+        print('')
+        print('')
+        print('')
+        print(session['rackone'])
+        print(session['racktwo'])
+        print(session['userone'])
+        print(session['usertwo'])
+        print(session['userIdTurn'])
+        print(session['userNameTurn'])
+        print('')
+        print('')
+        print('')
+        print('')
+        print('')
+
         # TO-DO get the correct userids
         gameId = Games.add_game(dbCur, userid, userid2)
         db.connection.commit()
 
         newGame = Games.get_game_by_id(dbCur, gameId)
         playerStats = GamePlay.generate_new_game_stats(dbCur, newGame)
-        return render_template('game.html', gameStatus='newGame', playerStats=playerStats)
-
+        return render_template('game.html', gameStatus='newGame', playerStats=playerStats, rack=session['rackone'])
+    
 
 @app.route('/end-game/', methods=['GET', 'POST'])
 def forfeitGame():
@@ -254,7 +347,6 @@ def forfeitGame():
     db.connection.commit()
     return render_template('menu.html', activeGame=False, gameForfeited=True)
 
-
 @app.route('/scoreboard/', methods=['GET', 'POST'])
 def scoreboard():
     userScore = request.args.get('user-score')
@@ -273,13 +365,12 @@ def scoreboard():
 
             if re.match(r'[A-Za-z0-9]{1,50}', username):
                 logging.info('%s is good username format', username)
-                # userScore = request.args.get('user-score')
+                # userScore = request.args.get('user-score')     
                 return generateScoreboard(username)
             else:
                 logging.warn('%s is bad username format', username)
-
+  
     return render_template('scoreboard.html')
-
 
 def generateScoreboard(username):
     noScores = False
@@ -289,15 +380,14 @@ def generateScoreboard(username):
     logging.debug('getting score for user: %s', username)
     # TO-DO: get username for current user
     username = session['name']
+
     scoresRetrieved = Users.get_user_score_board(Users, dbCur, username)
     if scoresRetrieved != []:
         # TO-DO: get username for current user
         userFinalScores = Users.get_user_by_user_name(Users, dbCur, username)
     else:
         noScores = True
-
-    return render_template('scoreboard.html', scoresRetrieved=scoresRetrieved, username=username,
-                           userFinalScores=userFinalScores, noScores=noScores)
+    return render_template('scoreboard.html', scoresRetrieved=scoresRetrieved, username=username, userFinalScores=userFinalScores, noScores=noScores) 
 
 
 @app.route('/moves/', methods=['GET', 'POST'])
@@ -310,6 +400,7 @@ def getMoves():
 
     print(gameMoves)
     return render_template('moves.html', gameMoves=gameMoves)
+
 
 
 if __name__ == "__main__":

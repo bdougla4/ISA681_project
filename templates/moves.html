@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Moves</title>
+    <!link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://localhost/moves">
+</head>
+<body>
+		<div class="moves">
+			<h1>Moves for Game ID:</h1>
+			<ol>
+				{% for move in gameMoves %}
+                <li>
+                    User: {{move.username}} -- Word: {{move.word_created}} -- Points: {{move.points}} -- Skipped Turn: {{move.turn_skipped}} 
+					-- Column: {{move.column_num}} -- Row: {{move.row_num}} -- Position: {{move.position_played}}
+                </li>
+                {% endfor %}
+			</ol>
+			<!-- {'username': 'user1', 'move_number': 1, 'word_created': 'JAG', 'points': 14, 'turn_skipped': 0, 
+				'column_num': 3, 'row_num': 7, 'position_played': 'down'} -->
+			<!-- usernames, user scores, timer, and player's turn should be displayed at all times -->
+
+			<div></div>
+            <a href="{{url_for('menu')}}">
+                <button>Back to Menu</button>            
+            </a>
+		</div>
+	</body>
+</html>
+
+
+
+

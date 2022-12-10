@@ -1,0 +1,2 @@
+class LettersNotInRackException(Exception):
+    pass

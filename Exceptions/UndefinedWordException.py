@@ -1,0 +1,2 @@
+class UndefinedWordException(Exception):
+    pass
