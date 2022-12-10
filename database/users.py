@@ -5,6 +5,7 @@ from mysql.connector import Error
 get_users_loss_rate = None
 get_users_win_rate = None
 
+
 class Users:
 
     def add_user(db, username):
@@ -13,7 +14,8 @@ class Users:
             # TO-DO: do we want to pass in the db? or the cursor? or initialize it every time?
             dbCur = db.cursor()
             logging.debug("Adding user into db")
-            dbCur.execute("INSERT into users(user_id, username, win, loss) values(%s, %s, %s, %s)", (id, username, 0, 0))
+            dbCur.execute("INSERT into users(user_id, username, win, loss) values(%s, %s, %s, %s)",
+                          (id, username, 0, 0))
             # TO-DO: are we ok with how I create the user_id?
             db.commit()
             logging.info("Inserted user into table with id: %s", str(id))
@@ -65,7 +67,6 @@ class Users:
             logging.error("Error: %s", err)
             dbCur.close()
 
-
     def set_user_lost(self, dbCur, userid):
         try:
             lossResults = self.get_users_loss_rate(self, dbCur, userid) + 1
@@ -79,26 +80,23 @@ class Users:
             logging.error("Error: %s", err)
             dbCur.close()
 
-
     def get_user_by_user_id(self, dbCur, userid):
         try:
             logging.debug("Getting user: %s", userid)
             # dbCur = db.cursor()
-            dbCur.execute('SELECT * FROM users where user_id = %s', (userid,))
+            dbCur.execute('SELECT * FROM login where user_id = %s', (userid,))
             user = (dbCur.fetchone())
             logging.info("Returning user: %s", str(user))
             return user
         except Error as err:
             logging.error("Error: %s", err)
             dbCur.close()
-
-
 
     def get_user_by_user_name(self, dbCur, username):
         try:
             logging.debug("Getting user: %s", username)
             # dbCur = db.cursor()
-            dbCur.execute('SELECT * FROM users where username = %s', (username,))
+            dbCur.execute('SELECT * FROM login where username = %s', (username,))
             user = (dbCur.fetchone())
             logging.info("Returning user: %s", str(user))
             return user
@@ -106,12 +104,22 @@ class Users:
             logging.error("Error: %s", err)
             dbCur.close()
 
-
-    def get_user_score_board(self, dbCur, username): 
+    def get_user_score_board(self, dbCur, username):
         try:
             usersList = []
             logging.debug("Getting scoreboard for user: %s", username)
-            dbCur.execute('SELECT games.game_id, users.username as user1, users.user_id, games.user_id_one, games.user_id_two, games.winner_user_id, games.date_played FROM users JOIN games ON games.user_id_one = users.user_id OR games.user_id_two = users.user_id WHERE (users.username = %s AND games.active_game = False) ORDER BY games.date_played DESC', (username,))
+            dbCur.execute('SELECT games.game_id, login.username as user1, login.login_id, games.username_id_one, '
+                          'games.username_id_two, games.win, games.date_played FROM login JOIN games '
+                          'ON games.username_id_one = login.username OR games.username_id_two = login.username WHERE'
+                          '(login.username = %s AND games.active_game = False) ORDER BY games.date_played DESC',
+                          (username,))
+
+            """ dbCur.execute(
+                'SELECT games.game_id, users.username as user1, users.user_id, games.user_id_one, games.user_id_two, 
+                games.winner_user_id, games.date_played FROM users JOIN games ON games.user_id_one = users.user_id 
+                OR games.user_id_two = users.user_id WHERE (users.username = %s AND games.active_game = False) 
+                ORDER BY games.date_played DESC', (username,))"""
+
             users = (dbCur.fetchall())
             for user in users:
                 logging.debug("getting all scores for user")
@@ -125,7 +133,7 @@ class Users:
 
                 if usersId == usernameIdOne:
                     returnUserTwo = (self.get_user_by_user_id(self, dbCur, usernameIdTwo))['username']
-                else: 
+                else:
                     returnUserTwo = (self.get_user_by_user_id(self, dbCur, usernameIdOne))['username']
                 if usersId == winnersId:
                     logging.debug("user: %s was the winner for this game", usersName)
@@ -133,8 +141,9 @@ class Users:
                 else:
                     logging.debug("user: %s was not the winner for this game", usersName)
                     returnWinner = returnUserTwo
-                
-                singleUser = {'gameId':user['game_id'], 'user':returnUserOne, 'opponent':returnUserTwo, 'winner':returnWinner, 'datePlayed':user['date_played']}
+
+                singleUser = {'gameId': user['game_id'], 'user': returnUserOne, 'opponent': returnUserTwo,
+                              'winner': returnWinner, 'datePlayed': user['date_played']}
                 usersList.append(singleUser)
             return usersList
         except Error as err:
@@ -144,7 +153,7 @@ class Users:
     # def get_all_users(db):
     #     try:
     #         dbCur = db.cursor()
-    #         dbCur.execute('SELECT * FROM users')
+    #         dbCur.execute('SELECT * FROM login')
     #         for row in dbCur.fetchall():
     #             print(row)
     #         # TO-DO add return statement if needed
