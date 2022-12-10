@@ -1,94 +1,3 @@
-from flask import escape, Flask, redirect, render_template, request, session, url_for
-from flask_mysqldb import MySQL
-import MySQLdb.cursors
-import os
-import re
-import bcrypt
-import logging
-from database.games import *
-from database.users import *
-from database.moves import *
-#from game_play import *
-# Loading .env file to keep database username/passwords from being hardcoded into source code.
-from dotenv import load_dotenv
-load_dotenv()
-
-# Logging functionalilty for informational (and debugging).
-logging.basicConfig(filename='app.log', filemode='a', encoding='utf-8', level=logging.DEBUG)
-
-app = Flask(__name__)
-app.secret_key = os.urandom(12)
-
-app.config['MYSQL_HOST'] = os.getenv('DB_HOST')
-app.config['MYSQL_USER'] = os.getenv('DB_SCRABBLE')
-app.config['MYSQL_PASSWORD'] = os.getenv('DB_SCRABBLE_PWD')
-app.config['MYSQL_DB'] = os.getenv('DB_Scrabble')
-
-# Connecting to MySQL database (MYSQL_DB)
-db = MySQL(app)
-
-
-app = Flask(__name__)
-app.secret_key = os.urandom(12)
-
-app.config['MYSQL_HOST'] = os.getenv('DB_HOST')
-app.config['MYSQL_USER'] = os.getenv('DB_SCRABBLE')
-app.config['MYSQL_PASSWORD'] = os.getenv('DB_SCRABBLE_PWD')
-app.config['MYSQL_DB'] = os.getenv('DB_Scrabble')
-
-# Connecting to MySQL database (MYSQL_DB)
-db = MySQL(app)
-# TO-DO: do we want to log things to a file?
-
-# GLOBAL VARIABLES
-attempts = 0  # logging number of password entry attempts for a user.
-
-@app.route("/")
-def homepage():
-    """ISA Scrabble general homepage for users to Login, Register View Stats, and Play. """
-    return render_template('index.html')
-
-
-@app.route('/login/', methods=['GET', 'POST'])
-def login():
-    """
-    Login route to check username and password in the database. If user is already logged in, users
-    are redirected to their user profile where they are able to continue any previous games, or start a new one.
-    Function takes user input from the login.html form, escapes the contents and compares the provided credentials with
-    the stored information in the database.
-    """
-    if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
-        logging.info("Login request: %s" % (request.form["username"]))
-        cursor = db.connection.cursor(MySQLdb.cursors.DictCursor)
-
-        # properly escaping user input to avoid XSS
-        username = str(escape(request.form["username"]))
-        password = escape(request.form["password"]).encode('utf-8')
-
-        # check if username is in database
-        cursor.execute("SELECT * from login where username='" + username + "'")
-        account = cursor.fetchone()
-
-
-        if account is None:
-            msg = "No account with that name. Would you like to Register?"
-            logging.info("Login request redirected to registration for %s" % escape(request.form["username"]))
-            return render_template("index.html", msg=msg)
-        else:
-            # check if correct password was entered
-
-            salt = account['salt'].encode('utf-8')
-            enteredPswd = bcrypt.hashpw(password, salt)
-
-            if enteredPswd == account['password'].encode('utf-8'):
-                session['loggedin'] = True
-                session['id'] = account['login_id']
-                session['name'] = account['username']
-                session['email'] = account['email']
-                msg = "Welcome " + username + "!"
-                logging.info("Logging sessionID: %s, user: %s, email: %s." % (session['id'], session['name'],
-                                                                              session['email']))
-                return render_template("menu.html", msg=msg)
 """ ISA681 Scrabble python main file.
     python app.py will get the Scrabble game going.
 
@@ -404,8 +313,7 @@ def getMoves():
 
 
 if __name__ == "__main__":
-    # This will force all communications to be exchanged via HTTPS rather than HTTP. 
-    app.run(ssl_context="adhoc")
+    app.run(ssl_context='adhoc')
     
-    # Upon generation of ssl certs, we will comment out the app.run(ssl_context="adhoc") above and use this line to use our self-signed certificates.
-    # app.run(ssl_context='isa681Cert.pem', 'isa681Key.pem')
+    # Use the following with OpenSSL keys generated for on a system. 
+    # app.run(host="0.0.0.0", ssl_context=("/etc/apache2/certs/isascrabble.crt", "/etc/apache2/certs/isascrabble.key"))
