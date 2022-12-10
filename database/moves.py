@@ -8,8 +8,8 @@ class Moves:
         try:
             # dbCur = db.cursor()
             logging.debug("Adding moves for game: %s and user_id: %s into database", str(gameId), str(userId))
-            dbCur.execute("INSERT into moves(move_id, game_id, user_id, word_created, points, turn_skipped, column_num, row_num, position_played) values(%s, %s, %s, %s, %s, %s, %s, %s, %s)", 
-            (random.getrandbits(32), gameId, userId, wordCreated, points, turnSkipped, columnNum, rowNum, positionPlayed))
+            dbCur.execute("INSERT into moves(game_id, user_id, word_created, points, turn_skipped, column_num, row_num, position_played) values(%s, %s, %s, %s, %s, %s, %s, %s, %s)", 
+            (gameId, userId, wordCreated, points, turnSkipped, columnNum, rowNum, positionPlayed))
             # db.commit()
             logging.info("Inserted move")
 

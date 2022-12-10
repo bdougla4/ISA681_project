@@ -8,21 +8,17 @@ get_users_win_rate = None
 
 class Users:
 
-    def add_user(db, username):
+    def add_user(dbCur, loginId, username):
         try:
-            id = random.getrandbits(32)
             # TO-DO: do we want to pass in the db? or the cursor? or initialize it every time?
-            dbCur = db.cursor()
+            # dbCur = db.cursor()
             logging.debug("Adding user into db")
             dbCur.execute("INSERT into users(user_id, username, win, loss) values(%s, %s, %s, %s)",
                           (id, username, 0, 0))
             # TO-DO: are we ok with how I create the user_id?
-            db.commit()
-            logging.info("Inserted user into table with id: %s", str(id))
-            return id
         except Error as err:
             logging.error("Error: %s", err)
-            db.close()
+            dbCur.close()
 
     def get_users_win_rate(self, dbCur, userid):
         try:
@@ -113,13 +109,6 @@ class Users:
                           'ON games.username_id_one = login.username OR games.username_id_two = login.username WHERE'
                           '(login.username = %s AND games.active_game = False) ORDER BY games.date_played DESC',
                           (username,))
-
-            """ dbCur.execute(
-                'SELECT games.game_id, users.username as user1, users.user_id, games.user_id_one, games.user_id_two, 
-                games.winner_user_id, games.date_played FROM users JOIN games ON games.user_id_one = users.user_id 
-                OR games.user_id_two = users.user_id WHERE (users.username = %s AND games.active_game = False) 
-                ORDER BY games.date_played DESC', (username,))"""
-
             users = (dbCur.fetchall())
             for user in users:
                 logging.debug("getting all scores for user")

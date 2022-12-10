@@ -87,3 +87,7 @@ class Bag:
     def get_remaining_tiles(self):
         #Returns the number of tiles left in the bag.
         return len(self.bag)
+
+    def get_bag_str(self):
+        #Displays the user's rack in string form.
+        return ", ".join(str(item.get_letter()) for item in self.bag)

@@ -1,4 +1,12 @@
+
+""" ISA681 Scrabble python main file.
+    python app.py will get the Scrabble game going.
+    Authors: Veeda Sherzadah <vsherzad@gmu.edu> & Brienne Douglas (bdougla4@gmu.edu)
+    Fall 2022
+    December 10, 2022
+"""
 from flask import escape, Flask, redirect, render_template, request, session, url_for
+from flask_login import LoginManager, UserMixin
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import os
@@ -8,94 +16,109 @@ import logging
 from database.games import *
 from database.users import *
 from database.moves import *
-from game_play import *
-from board.bag import *
-from board.rack import *
-#Loding .env file to keep database username/passwords from being hardcoded into source code. 
+# from game_play import *
+
+# Loading .env file to keep database username/passwords from being hardcoded into source code.
 from dotenv import load_dotenv
 load_dotenv()
-'''
-from flaskext.mysql import MySQL
-import mysql.connector
-'''
 
-# TO-DO: all should be stored in session
-userid = '364952648'
-userid2 = '1356773521'
-userOneBag = None
-userOneRack = None
-
-userTwoBag = None
-userTwoRack = None
+# Logging functionalilty for informational (and debugging) purposes.
+# logging.basicConfig(filename='app.log', filemode='a', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
-app.secret_key = os.urandom(12)
 
+# Random 24 bit string for session key.
+app.secret_key = os.urandom(24)
+
+userid = '364952648'
+userid2 = '1356773521'
 app.config['MYSQL_HOST'] = '127.0.0.1'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = ''
 app.config['MYSQL_DB'] = 'scrabble'
 
-#Connecting to MySQL database (MYSQL_DB)
-db = MySQL(app)
-# TO-DO: do we want to log things to a file? 
-logging.basicConfig(level=logging.DEBUG)
+# Loading flask-login Login Manager to assist with joining multiple login sessions for game play.
+# loginManger = LoginManger()
+# loginManger.init_app(app)
 
+# Connecting to MySQL database (MYSQL_DB)
+db = MySQL(app)
+
+# GLOBAL VARIABLES
+attempts = 0  # logging number of password entry attempts for a user.
+# class User(UserMixin, db):
+#     cursor = db.connection.cursor(MySQLdb.cursors.DictCursor)
+#     user = cursor.execute()
 
 @app.route("/")
 def homepage():
-    """ISA Scrabble general homepage for users to Login database, Register or Reset password"""
+    """ISA Scrabble general homepage for users to Login, Register View Stats, and Play. """
     return render_template('index.html')
 
+# @app.loginManager.user_loader
+# def load_user(username):
+#     """ Using flask's login manager feature to assist with maintaining the various logged in users.
+#     This will be essential for connecting players to one another for game play.
+#     Input variable: username must be of type string for correct use. We will use the session['username'] key as the
+#     username for this function. """
+#     return User.get(username)
 
 @app.route('/login/', methods=['GET', 'POST'])
 def login():
+    """
+    Login route to check username and password in the database. If user is already logged in, users
+    are redirected to their user profile where they are able to continue any previous games, or start a new one.
+    Function takes user input from the login.html form, escapes the contents and compares the provided credentials with
+    the stored information in the database.
+    """
     if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
+        logging.info("Login request: %s" % (request.form["username"]))
         cursor = db.connection.cursor(MySQLdb.cursors.DictCursor)
-        #username = request.form["username"]
-        # password = (request.form["password"]).encode('utf-8')
 
-        #properly escaping user input to avoid XSS
+        # properly escaping user input to avoid XSS
         username = str(escape(request.form["username"]))
         password = escape(request.form["password"]).encode('utf-8')
 
-        #check if username is in database
-        cursor.execute("SELECT * from users where usrname='" + username + "'")
+        # check if username is in database
+        cursor.execute("SELECT * from login where username='" + username + "'")
         account = cursor.fetchone()
-
-        ## cursor.execute("SELECT * from users where usrname='" + username + "' and password='" + password + "'")
 
         if account is None:
             msg = "No account with that name. Would you like to Register?"
-            print("msg " + msg)
+            logging.info("Login request redirected to registration for %s" % escape(request.form["username"]))
             return render_template("index.html", msg=msg)
         else:
-            #check if correct password was entered
+            # check if correct password was entered
             salt = account['salt'].encode('utf-8')
             enteredPswd = bcrypt.hashpw(password, salt)
 
-            if enteredPswd == account['passwordHash'].encode('utf-8'):
+            if enteredPswd == account['password'].encode('utf-8'):
+                #setting user overall session cookie
                 session['loggedin'] = True
-                session['id'] = account['userID']
-                session['name'] = account['usrname']
+                session['id'] = account['login_id']
+                session['name'] = account['username']
                 session['email'] = account['email']
                 msg = "Welcome " + username + "!"
-                return render_template("user.html", msg=msg)
+                logging.info("Logging sessionID: %s, user: %s, email: %s." % (session['id'], session['name'],
+                                                                              session['email']))
+                return render_template("menu.html", msg=msg)
             else:
                 msg = "Incorrect Username/Password!"
+                logging.info("Invalid login attempt user: %s, email: %s." % (account['username'], account['email']))
                 return render_template('login.html', msg=msg)
     return render_template('login.html')
 
+
 @app.route('/logout')
 def logout():
-    # Remove session data, this will log the user out
-   session.pop('loggedin', None)
-   session.pop('id', None)
-   session.pop('username', None)
+    # Remove session data, this will log the user out.
+    session.pop('loggedin', None)
+    session.pop('id', None)
+    session.pop('name', None)
 
-   # Redirect to login page
-   return redirect(url_for('login'))
-
+    # Redirect to login page
+    return redirect(url_for('login'))
 
 
 @app.route('/register/', methods=['GET', 'POST'])
@@ -107,27 +130,44 @@ def register():
             username = escape(request.form['username'])
             password = escape(request.form['password']).encode('utf-8')
             email = escape(request.form['email'])
-            cursor.execute('SELECT * FROM users WHERE usrname = %s', (username,))
+            cursor.execute('SELECT * FROM login WHERE username = %s', (username,))
             account = cursor.fetchone()
             if account:
                 msg = 'Account already exists !'
                 return render_template('login.html', msg=msg)
             elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
                 msg = 'Invalid email address !'
+            elif len(request.form['password']) < 8 or len(request.form['password']) > 20 or\
+                    re.search((r"(\#)+|(\*)+|\!+|\&+\@+\$+"), escape(request.form['password'])) == None:
+                msg = 'Passwords must be a minimum of 8 characters, contain lower and upper case letters, numbers ' \
+                      'and at least one special character (acceptable characters: #, *, ! &, @, $).'
             elif not username or not password or not email:
                 msg = 'Please complete all required fields.'
             else:
-                #generating salt and hashing password
+                # generating salt and hashing password
+                active = False
                 salt = bcrypt.gensalt()
-                passwordHash = bcrypt.hashpw(password, salt)
-                cursor.execute('INSERT INTO users VALUES (NULL, %s, %s, %s, %s)', (username, passwordHash, salt, email,))
+                password_hash = bcrypt.hashpw(password, salt)
+                cursor.execute('INSERT INTO login (username, email, password, salt, actively_logged_in)'
+                               'VALUES(%s, %s, %s, %s, %s)', (username, email, password_hash, salt, active))
                 db.connection.commit()
-                msg = 'You have successfully registered !'
+                logging.debug("Created Login. Now creating user for login")
+
+                loginId = cursor.execute('SELECT login_id FROM login WHERE username = %s', (username,))
+                Users.add_user(cursor, loginId, username)
+                db.connection.commit()
+
+                logging.info("Registering user: %s and updating database %s.login." % (username, app.config['MYSQL_DB']))
+                msg = 'You have successfully registered! \nPlease login.'
+                return render_template('index.html', msg=msg)
         elif request.method == 'POST':
             msg = 'Please complete all required fields.'
+            logging.info("Registration failed for user. Not all fields completed.")
     elif request.method == 'POST':
         msg = 'Please complete all required fields.'
+        logging.info("Registration failed for user. Not all fields completed.")
     return render_template('register.html', msg=msg)
+
 
 @app.route('/menu/', methods=['GET', 'POST'])
 def menu():
@@ -147,11 +187,38 @@ def game():
     displayForfeitError = None
     displayNotInRackError = None
     playerStats = None
+    print('')
+    print('')
+    print('')
+    print('in game')
+    print('')
+    print('')
+    print('')
+    print('')
+    print(session['bag'])
+    print('')
+    print('')
+    print('')
+    print('')
+    print(session['rackone'])
+    print(session['racktwo'])
+    print(session['userone'])
+    print(session['usertwo'])
+    print(session['userIdTurn'])
+    print(session['userNameTurn'])
+    print('')
+    print('')
+    print('')
+    print('')
+    print('')
+
+    # TO-DO: determine rack based on user's turn 
+    rack = session['rackone']
     try:
         dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
         # TO-DO: save rack in session
-        userOneRack = request.args.get('rackOne')
-        userOneRack = request.args.get('rackTwo')
+        # userOneRack = request.args.get('rackOne')
+        # userOneRack = request.args.get('rackTwo')
         # used in the case that a user enters a non defined word and old stats need to stay on board
         if ('gameStatus' in request.args):
             gameStatus = request.args.get('gameStatus')
@@ -174,7 +241,8 @@ def game():
             row = str(escape(request.form["row"]))
             # TO-DO: make sure it is user's turn when inserting move
             # TO-DO: get user id
-            playerStats = GamePlay.handle_users_input(GamePlay, dbCur, currentGame['game_id'], currentUsersTurn, word, position, col, row, userOneRack)
+            playerStats = GamePlay.handle_users_input(GamePlay, dbCur, currentGame['game_id'], currentUsersTurn, word, position, col, row, rack)
+            rack=playerStats['rack']
             db.connection.commit()
     except UserForfeitedException as err:
         logging.warning("Other user forfeited during game play. Displaying error to UI")
@@ -188,8 +256,7 @@ def game():
 
             
     return render_template('game.html', gameStatus='continue', playerStats=playerStats, 
-        displayUndefinedError=displayUndefinedError, displayForfeitError=displayForfeitError, displayNotInRackError=displayNotInRackError,
-        rack=rack)
+        displayUndefinedError=displayUndefinedError, displayForfeitError=displayForfeitError, displayNotInRackError=displayNotInRackError, rack=rack)
 
 @app.route('/new-game/', methods=['GET', 'POST'])
 def newGame():
@@ -207,11 +274,43 @@ def newGame():
         logging.debug('User has no active games currently.')
         logging.debug('Creating new bag.')
         # TO-DO: save bags and racks in session 
-        userOneBag = Bag()
-        userTwoBag = Bag()
+        bag = Bag()
         logging.debug('Creating new rack.')
-        userOneRack = Rack(userOneBag)
-        userOneRack = Rack(userTwoBag)
+        userOneRack = Rack(bag)
+        userTwoRack = Rack(bag)
+        session['bag'] = bag.get_bag_str()
+        session['rackone'] = userOneRack.get_rack_str()
+        session['racktwo'] = userTwoRack.get_rack_str()
+
+        session['userone'] = session['id']
+        session['usertwo'] = userid2
+
+        session['userIdTurn'] = session['id']
+        session['userNameTurn'] = session['name']
+        print('')
+        print('')
+        print('')
+        print('in new game')
+        print('')
+        print('')
+        print('')
+        print('')
+        print(session['bag'])
+        print('')
+        print('')
+        print('')
+        print('')
+        print(session['rackone'])
+        print(session['racktwo'])
+        print(session['userone'])
+        print(session['usertwo'])
+        print(session['userIdTurn'])
+        print(session['userNameTurn'])
+        print('')
+        print('')
+        print('')
+        print('')
+        print('')
 
         # TO-DO get the correct userids
         gameId = Games.add_game(dbCur, userid, userid2)
@@ -219,7 +318,7 @@ def newGame():
 
         newGame = Games.get_game_by_id(dbCur, gameId)
         playerStats = GamePlay.generate_new_game_stats(dbCur, newGame)
-        return render_template('game.html', gameStatus='newGame', playerStats=playerStats, rackOne=userOneRack.get_rack_str(), rackTwo=userTwoRack.get_rack_str())
+        return render_template('game.html', gameStatus='newGame', playerStats=playerStats, rack=session['rackone'])
     
 
 @app.route('/end-game/', methods=['GET', 'POST'])

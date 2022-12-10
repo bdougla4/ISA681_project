@@ -9,12 +9,9 @@ get_all_active_games_by_both_user_id = None
 class Games:
     def add_game(dbCur, user_one, user_two):
         try:
-            id = random.getrandbits(32)
-            # TO-DO: do we want to pass in the db? or the cursor? or initialize it every time?
-            # dbCur = db.cursor()
             logging.debug("Adding game into db")
-            dbCur.execute("INSERT into games(game_id, user_id_one, user_id_two, user_id_one_score, user_id_two_score, winner_user_id, active_game, current_users_turn) values(%s, %s, %s, %s, %s, %s, %s, %s)", 
-            (id, user_one, user_two, 0, 0, None, True, user_one))
+            dbCur.execute("INSERT into games(user_id_one, user_id_two, user_id_one_score, user_id_two_score, winner_user_id, active_game, current_users_turn) values(%s, %s, %s, %s, %s, %s, %s)", 
+            (user_one, user_two, 0, 0, None, True, user_one))
             # TO-DO: are we ok with how I create the game_id?
             # db.commit()
             logging.info("Inserted game with id: %s", str(id))
@@ -43,7 +40,7 @@ class Games:
             logging.error("Error: %s", err)
             dbCur.close()
     
-    def update_game_score(self, dbCur, gameId, userId, userScore):
+    def update_game_score(self, dbCur, gameId, userId, userScore, rack):
         try:
             logging.debug("Updating user's: %s score for game: %s", userId, gameId)
             game = self.get_game_by_id(dbCur, gameId)
@@ -64,13 +61,13 @@ class Games:
                 userOneScore = userOneScore + userScore
                 logging.debug("setting user's: %s score to: %s", userOne, userOneScore)
                 dbCur.execute("UPDATE games SET user_id_one_score = %s, current_users_turn = %s WHERE game_id = %s and active_game = True", (userOneScore, userTwo, gameId))
-                return({'currentUsersTurn':playerTwoUsername, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername,'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore})
+                return({'currentUsersTurn':playerTwoUsername, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername,'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore, 'rack':rack})
             # current user is user_id_two
             else:
                 userTwoScore = userTwoScore + userScore
                 logging.debug("setting user's: %s score to: %s", userTwo, userTwoScore)
                 dbCur.execute("UPDATE games SET user_id_two_score = %s, current_users_turn = %s WHERE game_id = %s and active_game = True", (userTwoScore, userOne, gameId))
-                return({'currentUsersTurn':playerOneUserName, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore})
+                return({'currentUsersTurn':playerOneUserName, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore, 'rack':rack})
 
         except Error as err:
             logging.error("Error: %s", err)

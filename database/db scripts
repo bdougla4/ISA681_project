@@ -80,9 +80,10 @@ CREATE DATABASE IF NOT EXISTS scrabble;
 
 CREATE TABLE IF NOT EXISTS scrabble.login
 (
-	login_id BIGINT PRIMARY KEY,
+	login_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+	email VARCHAR(40) NOT NULL,
 	username VARCHAR(50) UNIQUE NOT NULL,
-	password VARCHAR(50) NOT NULL,
+	password VARCHAR(255) NOT NULL,
 	salt varchar(40) NOT NULL,
 	actively_logged_in BOOLEAN NOT NULL,
 	last_log_in DATE,
@@ -100,7 +101,7 @@ CREATE TABLE IF NOT EXISTS scrabble.users
 
 CREATE TABLE IF NOT EXISTS scrabble.games
 (
-	game_id BIGINT PRIMARY KEY,
+	game_id BIGINT PRIMARY KEY AUTO_INCREMENT,
 	user_id_one BIGINT NOT NULL,
 	user_id_two BIGINT NOT NULL,
 	user_id_one_score INT NOT NULL,
@@ -113,7 +114,7 @@ CREATE TABLE IF NOT EXISTS scrabble.games
 
 CREATE TABLE IF NOT EXISTS scrabble.moves
 (
-	move_id BIGINT PRIMARY KEY,
+	move_id BIGINT PRIMARY KEY AUTO_INCREMENT,
 	game_id BIGINT,
 	user_id BIGINT,
 	word_created VARCHAR(8),
@@ -125,6 +126,10 @@ CREATE TABLE IF NOT EXISTS scrabble.moves
 	date_played TIMESTAMP NOT NULL
 );
 
+
+ALTER TABLE scrabble.users ADD CONSTRAINT `login_user_id_fk_1` FOREIGN KEY (`user_id`) REFERENCES `login`(`login_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE scrabble.users ADD CONSTRAINT `login_user_name_fk_1` FOREIGN KEY (`username`) REFERENCES `login`(`username`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 ALTER TABLE scrabble.games ADD CONSTRAINT `games_user_id_fk_1` FOREIGN KEY (`user_id_one`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 

@@ -71,24 +71,24 @@ class GamePlay:
                 if isWord:
                     logging.info("user's word is a real word")
                     wordScore = self.calculate_word_score(word)
-                    return self.add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, False, col, row, position)
+                    return self.add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, False, col, row, position, rack)
                 else: 
                     logging.warning('position and / or word was not formatted properly')
                     raise UndefinedWordException("User's word: %s is undefined", word)
             if(word == '###'):
                 logging.info("user skipped turn")
-                return self.add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, True, col, row, position)
+                return self.add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, True, col, row, position, rack)
 
         # TO-DO:  DETERMINE IF WORD IS IN VALID POSITION
 
-    def add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, turnSkipped, col, row, position):
+    def add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, turnSkipped, col, row, position, rack):
         # checking in case other user forfeited game in the meantime
         logging.debug("checking if game is still active")
         isGameStillActive = Games.get_active_game_by_id(dbCur, gameId)
         if isGameStillActive != None:
             logging.debug("game is still active. adding move and updating game")
             Moves.add_move(dbCur, gameId, userId, word, wordScore, turnSkipped, col, row, position)
-            return Games.update_game_score(Games, dbCur, gameId, userId, wordScore)
+            return Games.update_game_score(Games, dbCur, gameId, userId, wordScore, rack)
         else: 
             raise UserForfeitedException("Other user forfeited during game play")
 
