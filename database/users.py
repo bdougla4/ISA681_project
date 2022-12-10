@@ -14,7 +14,7 @@ class Users:
             # dbCur = db.cursor()
             logging.debug("Adding user into db")
             dbCur.execute("INSERT into users(user_id, username, win, loss) values(%s, %s, %s, %s)",
-                          (id, username, 0, 0))
+                          (loginId, username, 0, 0))
             # TO-DO: are we ok with how I create the user_id?
         except Error as err:
             logging.error("Error: %s", err)
