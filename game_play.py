@@ -1,3 +1,4 @@
+from Exceptions.LettersNotInRackException import LettersNotInRackException
 from Exceptions.UndefinedWordException import UndefinedWordException
 from Exceptions.UserForfeitedException import UserForfeitedException
 from PyDictionary import PyDictionary
@@ -48,17 +49,23 @@ class GamePlay:
         logging.info('final word score: %s', word_score)
         return word_score
 
-    def handle_users_input(self, dbCur, gameId, userId, word, position, col, row):
+    def handle_users_input(self, dbCur, gameId, userId, word, position, col, row, rack):
         logging.debug("user's position: %s", position)
         logging.debug("user's word: %s", word)
         logging.debug("user's col: %s", col)
         logging.debug("user's row: %s", row)
         isWord = False
         wordScore = 0
-
         if (re.match(r'([A-Za-z]{2,7}|###)', word) and re.match(r'([rR][iI][gG][hH][tT])|([dD][oO][wW][nN])', position)
             and re.match(r'(1[0-5]|[1-9])', col) and re.match(r'(1[0-5]|[1-9])', row)):
             logging.info('position, word, col, ad row were formatted properly')
+            logging.debug("checking if user word uses rack letters")
+            for letter in word:
+                if letter.upper() not in rack:
+                # TO-DO: uncomment when rack is in session
+                # if letter.upper() not in rack.get_rack_str():
+                    logging.warning("User's word: %s does not use the letters in the rack", word)
+                    raise LettersNotInRackException("User's word: %s does not use the letters in the rack", word)
             if(word != "###"):
                 isWord = self.is_word_in_dictionary(word)
                 if isWord:
@@ -66,7 +73,7 @@ class GamePlay:
                     wordScore = self.calculate_word_score(word)
                     return self.add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, False, col, row, position)
                 else: 
-                    logging.info('position and / or word was not formatted properly')
+                    logging.warning('position and / or word was not formatted properly')
                     raise UndefinedWordException("User's word: %s is undefined", word)
             if(word == '###'):
                 logging.info("user skipped turn")

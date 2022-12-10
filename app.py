@@ -9,6 +9,8 @@ from database.games import *
 from database.users import *
 from database.moves import *
 from game_play import *
+from board.bag import *
+from board.rack import *
 #Loding .env file to keep database username/passwords from being hardcoded into source code. 
 from dotenv import load_dotenv
 load_dotenv()
@@ -17,8 +19,14 @@ from flaskext.mysql import MySQL
 import mysql.connector
 '''
 
+# TO-DO: all should be stored in session
 userid = '364952648'
 userid2 = '1356773521'
+userOneBag = None
+userOneRack = None
+
+userTwoBag = None
+userTwoRack = None
 
 app = Flask(__name__)
 app.secret_key = os.urandom(12)
@@ -137,9 +145,13 @@ def menu():
 def game():
     displayUndefinedError = None
     displayForfeitError = None
+    displayNotInRackError = None
     playerStats = None
     try:
         dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
+        # TO-DO: save rack in session
+        userOneRack = request.args.get('rackOne')
+        userOneRack = request.args.get('rackTwo')
         # used in the case that a user enters a non defined word and old stats need to stay on board
         if ('gameStatus' in request.args):
             gameStatus = request.args.get('gameStatus')
@@ -162,18 +174,22 @@ def game():
             row = str(escape(request.form["row"]))
             # TO-DO: make sure it is user's turn when inserting move
             # TO-DO: get user id
-            playerStats = GamePlay.handle_users_input(GamePlay, dbCur, currentGame['game_id'], currentUsersTurn, word, position, col, row)
+            playerStats = GamePlay.handle_users_input(GamePlay, dbCur, currentGame['game_id'], currentUsersTurn, word, position, col, row, userOneRack)
             db.connection.commit()
     except UserForfeitedException as err:
         logging.warning("Other user forfeited during game play. Displaying error to UI")
         displayForfeitError = True
+    except LettersNotInRackException as err:
+        logging.warning("User's input does not use letters in rack. Displaying error to UI")
+        displayNotInRackError = True
     except UndefinedWordException as err:
         logging.warning("User's input was invalid. Displaying error to UI")
         displayUndefinedError = True
 
             
     return render_template('game.html', gameStatus='continue', playerStats=playerStats, 
-        displayUndefinedError=displayUndefinedError, displayForfeitError=displayForfeitError)
+        displayUndefinedError=displayUndefinedError, displayForfeitError=displayForfeitError, displayNotInRackError=displayNotInRackError,
+        rack=rack)
 
 @app.route('/new-game/', methods=['GET', 'POST'])
 def newGame():
@@ -188,15 +204,22 @@ def newGame():
     if activeGames != None:
         logging.warn('User: %s is requesting a new game but already has an active one running', userid)
     else:
-        logging.debug('User has no active games currently. Creating a new game')
-        # TO-DO: how to get a second user to join this game?
+        logging.debug('User has no active games currently.')
+        logging.debug('Creating new bag.')
+        # TO-DO: save bags and racks in session 
+        userOneBag = Bag()
+        userTwoBag = Bag()
+        logging.debug('Creating new rack.')
+        userOneRack = Rack(userOneBag)
+        userOneRack = Rack(userTwoBag)
+
         # TO-DO get the correct userids
         gameId = Games.add_game(dbCur, userid, userid2)
         db.connection.commit()
 
         newGame = Games.get_game_by_id(dbCur, gameId)
         playerStats = GamePlay.generate_new_game_stats(dbCur, newGame)
-        return render_template('game.html', gameStatus='newGame', playerStats=playerStats)
+        return render_template('game.html', gameStatus='newGame', playerStats=playerStats, rackOne=userOneRack.get_rack_str(), rackTwo=userTwoRack.get_rack_str())
     
 
 @app.route('/end-game/', methods=['GET', 'POST'])
