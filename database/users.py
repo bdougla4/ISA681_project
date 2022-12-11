@@ -92,7 +92,7 @@ class Users:
         try:
             logging.debug("Getting user: %s", username)
             # dbCur = db.cursor()
-            dbCur.execute('SELECT * FROM login where username = %s', (username,))
+            dbCur.execute('SELECT * FROM users where username = %s', (username,))
             user = (dbCur.fetchone())
             logging.info("Returning user: %s", str(user))
             return user
@@ -104,16 +104,16 @@ class Users:
         try:
             usersList = []
             logging.debug("Getting scoreboard for user: %s", username)
-            dbCur.execute('SELECT games.game_id, login.username as user1, login.login_id, games.username_id_one, '
-                          'games.username_id_two, games.win, games.date_played FROM login JOIN games '
-                          'ON games.username_id_one = login.username OR games.username_id_two = login.username WHERE'
+            dbCur.execute('SELECT games.game_id, login.username as user1, login.login_id, games.user_id_one, '
+                          'games.user_id_two, games.winner_user_id, games.date_played FROM login JOIN games '
+                          'ON games.user_id_one = login.login_id OR games.user_id_two = login.login_id WHERE'
                           '(login.username = %s AND games.active_game = False) ORDER BY games.date_played DESC',
                           (username,))
             users = (dbCur.fetchall())
             for user in users:
                 logging.debug("getting all scores for user")
                 usersName = user['user1']
-                usersId = user['user_id']
+                usersId = user['login_id']
                 usernameIdOne = user['user_id_one']
                 usernameIdTwo = user['user_id_two']
                 winnersId = user['winner_user_id']

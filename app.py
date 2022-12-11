@@ -241,18 +241,6 @@ def game():
             playerStats = GamePlay.generate_continue_game_stats(dbCur, currentGame)
         else:
             raise UserForfeitedException("Other user forfeited during game play")
-        # if ('gameStatus' in request.args):
-        #     gameStatus = request.args.get('gameStatus')
-        #     if gameStatus == 'continue':
-        #         logging.debug("user wants to continue previous game. checking if user has active game")
-        #         # TO-DO: get user id
-        #         currentGame = Games.get_all_active_games_for_single_user_id(dbCur, session['id'])
-        #         if currentGame != None:
-        #             logging.info("user has active game")
-        #             playerStats = GamePlay.generate_continue_game_stats(dbCur, currentGame)
-        #         else:
-        #             raise UserForfeitedException("Other user forfeited during game play")
-
         if (session.get('rackOne') == None):
             logging.debug("Can not find rack in session. Need to generate old session keys")
             generate_old_session(dbCur, currentGame)
@@ -315,18 +303,6 @@ def generate_old_session(dbCur, currentGame):
 
     session['rackOne'] = currentGame['user_one_rack']
     session['rackTwo'] = currentGame['user_two_rack']
-
-    print('')
-    print('')
-    print('')
-    print('generated old session')
-    print('')
-    print('')
-    print('')
-    print('')
-    print('')
-    print('')
-    print('')
     print(session)
 
 
