@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS scrabble.login
 	salt varchar(40) NOT NULL,
 	actively_logged_in BOOLEAN NOT NULL,
 	last_log_in DATE,
-	last_log_out DATE
+	last_log_out DATE,
+	waiting
 );
 
 
@@ -52,6 +53,15 @@ CREATE TABLE IF NOT EXISTS scrabble.moves
 	date_played TIMESTAMP NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS scrabble.gamerooms
+(
+	room_id PRIMARY KEY,
+	player1 varchar(50),
+	player1_rack varchar(20),
+	player2 varchar(50),
+	player2_rack varchar(20)
+);
+
 
 ALTER TABLE scrabble.users ADD CONSTRAINT `login_user_id_fk_1` FOREIGN KEY (`user_id`) REFERENCES `login`(`login_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -66,3 +76,5 @@ ALTER TABLE scrabble.games ADD CONSTRAINT `games_user_id_fk_3` FOREIGN KEY (`win
 ALTER TABLE scrabble.moves ADD CONSTRAINT `moves_games_id_fk_1` FOREIGN KEY(`game_id`) REFERENCES `games`(`game_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 ALTER TABLE scrabble.moves ADD CONSTRAINT `moves_user_id_fk_1` FOREIGN KEY(`user_id`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE scrabble.login ADD COLUMN `waiting` BOOL NOT NULL;
