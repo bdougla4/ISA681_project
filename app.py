@@ -18,6 +18,7 @@ from database.moves import *
 from game_play import *
 from board.rack import *
 from board.bag import *
+from board.board import *
 
 # Loading .env file to keep database username/passwords from being hardcoded into source code.
 from dotenv import load_dotenv
@@ -76,6 +77,11 @@ def login():
     Function takes user input from the login.html form, escapes the contents and compares the provided credentials with
     the stored information in the database.
     """
+
+    # board = Board.get_board()
+    # session['board'] = board
+    # print(session['board'])
+
     if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
         logging.info("Login request: %s" % (request.form["username"]))
         cursor = db.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -199,6 +205,8 @@ def game():
     displayForfeitError = None
     displayNotInRackError = None
     playerStats = None
+    board = session['board']
+    # .split('\n')
     try:
         dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
         logging.debug("user wants to continue previous game. checking if user has active game")
@@ -271,7 +279,6 @@ def generate_old_session(dbCur, currentGame):
 
     session['rackOne'] = currentGame['user_one_rack']
     session['rackTwo'] = currentGame['user_two_rack']
-    print(session)
 
 
 @app.route('/new-game/', methods=['GET', 'POST'])
@@ -279,6 +286,7 @@ def newGame():
     # TO-DO: get userid from actual user
     dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
     logging.debug("user: %s is requesting to join new game", session['name'])
+    
 
     logging.debug("Making sure user does not have an active game already")
     userid = session['id']
@@ -309,6 +317,11 @@ def newGame():
         # TO-DO get the correct userids
         gameId = Games.add_game(dbCur, userid, userid2, bag.get_bag_str(), userOneRack.get_rack_str(), userTwoRack.get_rack_str())
         db.connection.commit()
+        board = Board.get_board()
+        session['board'] = board
+        # print(session['board'])
+
+        #  print(session['board'].split('\n'))
         playerStats = {'currentUserNameTurn':session['userNameTurn'], 'playerOne':session['userOneName'], 
         'playerTwo':session['userTwoName'], 'playerOneScore':0, 'playerTwoScore':0}
         return redirect(url_for('game', gameStatus='newGame', playerStats=playerStats, rack=session['rackOne']))
@@ -383,7 +396,6 @@ def getMoves():
     dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
     gameMoves = Moves.get_all_moves_for_game(dbCur, gameId)
 
-    print(gameMoves)
     return render_template('moves.html', gameMoves=gameMoves)
 
 

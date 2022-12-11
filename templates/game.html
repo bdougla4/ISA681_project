@@ -51,9 +51,11 @@
                 <button>Back to Menu</button>            
             </a>
 
-
-			<h1>GAME BOARD HERE</h1>
-
+			<pre>
+				{% for row in session['board'] %}
+				<div style="margin-bottom:-35px; margin-top:-5px;">{{row}}</div>
+				{% endfor %}
+			</pre>
 		</div>
 	</body>
 </html>
