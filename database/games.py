@@ -38,7 +38,7 @@ class Games:
             logging.error("Error: %s", err)
             dbCur.close()
     
-    def update_game_score(self, dbCur, gameId, userId, userScore):
+    def update_game_score(self, dbCur, gameId, userId, userScore, rack, bag):
         try:
             logging.debug("Updating user's: %s score for game: %s", userId, gameId)
             game = self.get_game_by_id(dbCur, gameId)
@@ -54,19 +54,28 @@ class Games:
             playerTwo = Users.get_user_by_user_id(Users, dbCur, userTwo)
             playerTwoUsername = playerTwo['username']
 
+            if bag == None:
+                bag = game['bag']
+
             # current user is user_id_one
             if str(userId) == str(userOne):
                 userOneScore = userOneScore + userScore
-                rack = game['user_two_rack']
+                if rack == None:
+                    game['user_one_rack']
                 logging.debug("setting user's: %s score to: %s", userOne, userOneScore)
-                dbCur.execute("UPDATE games SET user_id_one_score = %s, current_users_turn = %s WHERE game_id = %s and active_game = True", (userOneScore, userTwo, gameId))
+                dbCur.execute("UPDATE games SET user_id_one_score = %s, current_users_turn = %s, bag = %s, user_one_rack = %s WHERE game_id = %s and active_game = True", 
+                (userOneScore, userTwo, bag, rack, gameId))
+                rack = game['user_two_rack']
                 return({'currentUserNameTurn':playerTwoUsername, 'currentUserIdTurn':playerTwo['login_id'], 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername,'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore, 'rack':rack})
             # current user is user_id_two
             else:
                 userTwoScore = userTwoScore + userScore
-                rack = game['user_one_rack']
+                if rack == None:
+                    game['user_two_rack']
                 logging.debug("setting user's: %s score to: %s", userTwo, userTwoScore)
-                dbCur.execute("UPDATE games SET user_id_two_score = %s, current_users_turn = %s WHERE game_id = %s and active_game = True", (userTwoScore, userOne, gameId))
+                dbCur.execute("UPDATE games SET user_id_two_score = %s, current_users_turn = %s, bag = %s, user_two_rack = %s WHERE game_id = %s and active_game = True", 
+                (userTwoScore, userOne, bag, rack, gameId))
+                rack = game['user_one_rack']
                 return({'currentUserNameTurn':playerOneUserName, 'currentUserIdTurn':playerOne['login_id'], 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore, 'rack':rack})
 
         except Error as err:

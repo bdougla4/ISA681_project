@@ -199,39 +199,6 @@ def game():
     displayForfeitError = None
     displayNotInRackError = None
     playerStats = None
-    # rack = None
-    print('')
-    print('')
-    print('')
-    print('in game')
-    print('')
-    print('')
-    print('')
-    print('')
-    print('')
-    print('')
-    print('')
-    print(session)
-    # currentGame = Games.get_all_active_games_for_single_user_id(dbCur, session['id'])
-    # print(session['rackOne'])
-    # print(session['rackTwo'])
-    # print(session['userOneId'])
-    # print(session['userTwoId'])
-    # print(session['userOneName'])
-    # print(session['userTwoName'])
-    # print(session['userIdTurn'])
-    # print(session['userNameTurn'])
-    print('')
-    print('')
-    print('')
-    print('')
-    # print(currentGame)
-    print('')
-    print('')
-    print('')
-    print('')
-    print('')
-
     try:
         dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
         logging.debug("user wants to continue previous game. checking if user has active game")
@@ -249,9 +216,10 @@ def game():
         else:
             rack = session['rackTwo']
 
-        if ('submit-user-input' in request.form and ('user-word' in request.form and request.form['user-word'] != '') and 
+        if (('submit-user-input' in request.form and ('user-word' in request.form and request.form['user-word'] == '###')) 
+        or ('submit-user-input' in request.form and ('user-word' in request.form and request.form['user-word'] != '') and 
         ('user-position' in request.form and request.form['user-position'] != '') 
-        and ('col' in request.form and request.form['col'] != '') and ('row' in request.form and request.form['row'] != '')):
+        and ('col' in request.form and request.form['col'] != '') and ('row' in request.form and request.form['row'] != ''))):
             logging.debug('user submitted position, word, row, and column')
             position = str(escape(request.form["user-position"]))
             word = str(escape(request.form["user-word"]))
@@ -338,43 +306,12 @@ def newGame():
         session['userIdTurn'] = userid
         session['userNameTurn'] = username
 
-        print('')
-        print('')
-        print('')
-        print('in new game')
-        print('')
-        print('')
-        print('')
-        print('')
-        print('')
-        print('')
-        print('')
-        print('')
-        print(session['rackOne'])
-        print(session['rackTwo'])
-        print(session['userOneId'])
-        print(session['userTwoId'])
-        print(session['userOneName'])
-        print(session['userTwoName'])
-        print(session['userIdTurn'])
-        print(session['userNameTurn'])
-        print('')
-        print('')
-        print('')
-        print('')
-        print('')
-
         # TO-DO get the correct userids
         gameId = Games.add_game(dbCur, userid, userid2, bag.get_bag_str(), userOneRack.get_rack_str(), userTwoRack.get_rack_str())
         db.connection.commit()
-        # session['gameId'] = gameId
-        # newGame = Games.get_game_by_id(dbCur, gameId)
-        # No longer needed due to session storage
-        # playerStats = GamePlay.generate_new_game_stats(dbCur, newGame, session['userOneId'], session['userTwoId'], session['userOneName'], session['userTwoName'])
         playerStats = {'currentUserNameTurn':session['userNameTurn'], 'playerOne':session['userOneName'], 
         'playerTwo':session['userTwoName'], 'playerOneScore':0, 'playerTwoScore':0}
         return redirect(url_for('game', gameStatus='newGame', playerStats=playerStats, rack=session['rackOne']))
-        # return render_template('game.html', gameStatus='newGame', playerStats=playerStats, rack=session['rackOne'])
     
 
 @app.route('/end-game/', methods=['GET', 'POST'])

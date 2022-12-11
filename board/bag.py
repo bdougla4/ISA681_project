@@ -1,4 +1,3 @@
-# code taken from https://github.com/fayrose/Scrabble
 from random import shuffle
 from board.tile import *
 
@@ -40,6 +39,13 @@ class Bag:
         #Takes no arguments.
         self.bag = []
         self.initialize_bag()
+
+    def init_bag(self, bag):
+        self.bag = []
+        for tile in bag:
+            self.add_to_bag(self, Tile(str(tile).upper(), LETTER_VALUES), 1)
+
+        return self.bag
 
     def add_to_bag(self, tile, quantity):
         #Adds a certain quantity of a certain tile to the bag. Takes a tile and an integer quantity as arguments.
@@ -91,3 +97,13 @@ class Bag:
     def get_bag_str(self):
         #Displays the user's rack in string form.
         return ", ".join(str(item.get_letter()) for item in self.bag)
+
+    # code above taken from https://github.com/fayrose/Scrabble
+
+# TO-DO: add logging statements
+
+    def convert_string_bag_to_array(self, bagString):
+        return [word.strip().upper() for word in bagString.split(',')]
+
+    def convert_array_to_string(bag):
+        return ", ".join(str(item) for item in bag)

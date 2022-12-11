@@ -1,5 +1,4 @@
-# code taken from https://github.com/fayrose/Scrabble
-
+from board.bag import *
 class Rack:
     """
     Creates each player's 'dock', or 'hand'. Allows players to add, remove and replenish the number of tiles in their hand.
@@ -35,7 +34,32 @@ class Rack:
         #Returns the number of tiles left in the rack.
         return len(self.rack)
 
-    def replenish_rack(self):
+
+
+# code above taken from https://github.com/fayrose/Scrabble
+
+
+# TO-DO: add logging statements
+    def convert_string_rack_to_array(self, rackString):
+        self.rack = [word.strip().upper() for word in rackString.split(',')]
+        return self.rack
+    
+    def convert_array_to_string(self):
+        #Displays the user's rack in string form.
+        return ", ".join(str(item) for item in self.rack)
+
+    def remove_multiple_from_rack(self, tiles):
+        for tile in tiles:
+            self.rack.remove(tile.upper())
+
+    def replenish_rack(self, bag):
         #Adds tiles to the rack after a turn such that the rack will have 7 tiles (assuming a proper number of tiles in the bag).
-        while self.get_rack_length() < 7 and self.bag.get_remaining_tiles() > 0:
-            self.add_to_rack()
+        while self.get_rack_length(self) < 7 and len(bag) > 0:
+            self.add_letter_to_rack(self, bag)
+        return bag
+
+
+    def add_letter_to_rack(self, bag):
+        letter = bag.pop()
+        self.rack.append(letter)
+
