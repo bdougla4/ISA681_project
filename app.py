@@ -5,7 +5,6 @@
     December 10, 2022
 """
 from flask import escape, Flask, redirect, render_template, request, session, url_for
-from flask_login import LoginManager, UserMixin
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import os
@@ -18,6 +17,9 @@ from database.moves import *
 from game_play import *
 from board.rack import *
 from board.bag import *
+
+from flask_socketio import SocketIO, join_room, leave_room
+import eventlet
 
 # Loading .env file to keep database username/passwords from being hardcoded into source code.
 from dotenv import load_dotenv
@@ -36,33 +38,18 @@ app.config['MYSQL_USER'] = os.getenv('DB_SCRABBLE')
 app.config['MYSQL_PASSWORD'] = os.getenv('DB_SCRABBLE_PWD')
 app.config['MYSQL_DB'] = os.getenv('DB_Scrabble')
 
-# Loading flask-login Login Manager to assist with joining multiple login sessions for game play.
-loginManger = LoginManger()
-loginManger.init_app(app)
+# Creating socketIO connection and initializing it
+socketio = SocketIO(app)
 
 
 # Connecting to MySQL database (MYSQL_DB)
 db = MySQL(app)
-
-# GLOBAL VARIABLES
-attempts = 0  # logging number of password entry attempts for a user.
-class User(UserMixin, db):
-    cursor = db.connection.cursor(MySQLdb.cursors.DictCursor)
-    user = cursor.execute()
 
 
 @app.route("/")
 def homepage():
     """ISA Scrabble general homepage for users to Login, Register View Stats, and Play. """
     return render_template('index.html')
-
-@app.loginManager.user_loader
-def load_user(username):
-    """ Using flask's login manager feature to assist with maintaining the various logged in users.
-    This will be essential for connecting players to one another for game play.
-    Input variable: username must be of type string for correct use. We will use the session['username'] key as the
-    username for this function. """
-    return User.get(username)
 
 
 @app.route('/login/', methods=['GET', 'POST'])
@@ -113,6 +100,7 @@ def login():
 
 @app.route('/logout')
 def logout():
+    
     # Remove session data, this will log the user out.
     session.pop('loggedin', None)
     session.pop('id', None)
@@ -402,6 +390,33 @@ def getMoves():
     return render_template('moves.html', gameMoves=gameMoves)
 
 
+@socketio.on('send_message')
+def handle_send_message_event(data):
+    # SocketIO handling of messages (e.g. game moves) in gameroom.
+    # Message should include room_id, player1 submitting word, row, column, word submitting, player's rack after play
+    
+    logging.info("GameRoom: %s \tPlayer %s submitting %s at row:column %s:%s. \nRemaining letters: %s" %(data['room'], data['username'], data['word'], data['row'], data['column'], , data['rack']))
+    socketio.emit('receive_message', data, room=data['room'])
+
+    
+@socketio.on('join_room')
+def handle_join_room_event(data):
+    # SocketIO handling connecting users to a room.
+    # Message should include room_id, player1 
+    
+    logging.info("%s entering %s " %(data['username'], data['room']))
+    join_room(data['room'])
+    socketio.emit('join_room_announcement', data, room=data['room'])
+    
+    
+@socketio.on('leave_room')
+def handle_leave_room_event(data):
+    # SocketIO handling of user leaving room. 
+    # Message should include room_id, player1 
+    logging.info("%s leaving %s " %(data['username'], data['room']))
+    leave_room(data['room'])
+    socketio.emit('leave_room_announcement', data, room=data['room'])
+    
 
 if __name__ == "__main__":
     app.run(ssl_context='adhoc')
