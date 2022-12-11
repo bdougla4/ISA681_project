@@ -7,15 +7,13 @@ import MySQLdb.cursors
 get_all_active_games_by_both_user_id = None
 
 class Games:
-    def add_game(dbCur, user_one, user_two):
+    def add_game(dbCur, userOne, userTwo, bag, rackOne, rackTwo):
         try:
             logging.debug("Adding game into db")
-            dbCur.execute("INSERT into games(user_id_one, user_id_two, user_id_one_score, user_id_two_score, winner_user_id, active_game, current_users_turn) values(%s, %s, %s, %s, %s, %s, %s)", 
-            (user_one, user_two, 0, 0, None, True, user_one))
-            # TO-DO: are we ok with how I create the game_id?
-            # db.commit()
-            logging.info("Inserted game with id: %s", str(id))
-            return id
+            dbCur.execute("INSERT into games(user_id_one, user_id_two, user_id_one_score, user_id_two_score, winner_user_id, \
+            active_game, current_users_turn, bag, user_one_rack, user_two_rack) values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", 
+            (userOne, userTwo, 0, 0, None, True, userOne, bag, rackOne, rackTwo))
+            return dbCur.lastrowid
         except Error as err:
             logging.error("Error: %s", err)
             dbCur.close()
@@ -40,7 +38,7 @@ class Games:
             logging.error("Error: %s", err)
             dbCur.close()
     
-    def update_game_score(self, dbCur, gameId, userId, userScore, rack):
+    def update_game_score(self, dbCur, gameId, userId, userScore):
         try:
             logging.debug("Updating user's: %s score for game: %s", userId, gameId)
             game = self.get_game_by_id(dbCur, gameId)
@@ -59,15 +57,17 @@ class Games:
             # current user is user_id_one
             if str(userId) == str(userOne):
                 userOneScore = userOneScore + userScore
+                rack = game['user_two_rack']
                 logging.debug("setting user's: %s score to: %s", userOne, userOneScore)
                 dbCur.execute("UPDATE games SET user_id_one_score = %s, current_users_turn = %s WHERE game_id = %s and active_game = True", (userOneScore, userTwo, gameId))
-                return({'currentUsersTurn':playerTwoUsername, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername,'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore, 'rack':rack})
+                return({'currentUserNameTurn':playerTwoUsername, 'currentUserIdTurn':playerTwo['login_id'], 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername,'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore, 'rack':rack})
             # current user is user_id_two
             else:
                 userTwoScore = userTwoScore + userScore
+                rack = game['user_one_rack']
                 logging.debug("setting user's: %s score to: %s", userTwo, userTwoScore)
                 dbCur.execute("UPDATE games SET user_id_two_score = %s, current_users_turn = %s WHERE game_id = %s and active_game = True", (userTwoScore, userOne, gameId))
-                return({'currentUsersTurn':playerOneUserName, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore, 'rack':rack})
+                return({'currentUserNameTurn':playerOneUserName, 'currentUserIdTurn':playerOne['login_id'], 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore, 'rack':rack})
 
         except Error as err:
             logging.error("Error: %s", err)

@@ -49,7 +49,7 @@ class GamePlay:
         logging.info('final word score: %s', word_score)
         return word_score
 
-    def handle_users_input(self, dbCur, gameId, userId, word, position, col, row, rack):
+    def handle_users_input(self, dbCur, gameId, currentUserId, word, position, col, row, rack):
         logging.debug("user's position: %s", position)
         logging.debug("user's word: %s", word)
         logging.debug("user's col: %s", col)
@@ -60,6 +60,14 @@ class GamePlay:
             and re.match(r'(1[0-5]|[1-9])', col) and re.match(r'(1[0-5]|[1-9])', row)):
             logging.info('position, word, col, ad row were formatted properly')
             logging.debug("checking if user word uses rack letters")
+            # if currentUserId == userOneId:
+            #     nextUserId = userTwoId
+            # else:
+            #     nextUserId = userOneId
+            
+            if(word == '###'):
+                logging.info("user skipped turn")
+                return self.add_moves_and_update_game(dbCur, gameId, currentUserId, word, wordScore, True, col, row, position)
             for letter in word:
                 if letter.upper() not in rack:
                 # TO-DO: uncomment when rack is in session
@@ -71,33 +79,29 @@ class GamePlay:
                 if isWord:
                     logging.info("user's word is a real word")
                     wordScore = self.calculate_word_score(word)
-                    return self.add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, False, col, row, position, rack)
+                    return self.add_moves_and_update_game(dbCur, gameId, currentUserId, word, wordScore, False, col, row, position)
                 else: 
                     logging.warning('position and / or word was not formatted properly')
                     raise UndefinedWordException("User's word: %s is undefined", word)
-            if(word == '###'):
-                logging.info("user skipped turn")
-                return self.add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, True, col, row, position, rack)
 
         # TO-DO:  DETERMINE IF WORD IS IN VALID POSITION
 
-    def add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, turnSkipped, col, row, position, rack):
+    def add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, turnSkipped, col, row, position):
         # checking in case other user forfeited game in the meantime
         logging.debug("checking if game is still active")
         isGameStillActive = Games.get_active_game_by_id(dbCur, gameId)
         if isGameStillActive != None:
             logging.debug("game is still active. adding move and updating game")
             Moves.add_move(dbCur, gameId, userId, word, wordScore, turnSkipped, col, row, position)
-            return Games.update_game_score(Games, dbCur, gameId, userId, wordScore, rack)
+            return Games.update_game_score(Games, dbCur, gameId, userId, wordScore)
         else: 
             raise UserForfeitedException("Other user forfeited during game play")
 
     def generate_continue_game_stats(dbCur, currentGame):
         # TO-DO: save these values globally per game to avoid calling it duing every turn
-        currentUsersTurn = Users.get_user_by_user_id(Users, dbCur, (currentGame['current_users_turn']))
-        currentUsersTurn = currentUsersTurn['username']
+        currentUserNameTurn = Users.get_user_by_user_id(Users, dbCur, (currentGame['current_users_turn']))
+        currentUserNameTurn = currentUserNameTurn['username']
 
-        # TO-DO: send usernames in via param?
         playerOne = Users.get_user_by_user_id(Users, dbCur, currentGame['user_id_one'])
         playerOneUserName = playerOne['username']
         playerOneScore = currentGame['user_id_one_score']
@@ -106,18 +110,18 @@ class GamePlay:
         playerTwoUsername = playerTwo['username']
         playerTwoScore = currentGame['user_id_two_score']
 
-        return {'currentUsersTurn':currentUsersTurn, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':playerOneScore, 'playerTwoScore':playerTwoScore}
+        return {'currentUserNameTurn':currentUserNameTurn, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':playerOneScore, 'playerTwoScore':playerTwoScore}
 
-    def generate_new_game_stats(dbCur, newGame):
-        currentUsersTurn = Users.get_user_by_user_id(Users, dbCur, (newGame['current_users_turn']))
-        currentUsersTurn = currentUsersTurn['username']
+    # No longer needed due to session storage
+    # def generate_new_game_stats(dbCur, newGame):
+    #     currentUsersTurn = Users.get_user_by_user_id(Users, dbCur, (newGame['current_users_turn']))
+    #     currentUsersTurn = currentUsersTurn['username']
 
-        # TO-DO: send usernames in via param?
-        playerOne = Users.get_user_by_user_id(Users, dbCur, newGame['user_id_one'])
-        playerOneUserName = playerOne['username']
+    #     playerOne = Users.get_user_by_user_id(Users, dbCur, newGame['user_id_one'])
+    #     playerOneUserName = playerOne['username']
 
-        playerTwo = Users.get_user_by_user_id(Users, dbCur, newGame['user_id_two'])
-        playerTwoUsername = playerTwo['username']
-        return {'currentUsersTurn':currentUsersTurn, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':0, 'playerTwoScore':0}
+    #     playerTwo = Users.get_user_by_user_id(Users, dbCur, newGame['user_id_two'])
+    #     playerTwoUsername = playerTwo['username']
+    #     return {'currentUsersTurn':currentUsersTurn, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':0, 'playerTwoScore':0}
 
         

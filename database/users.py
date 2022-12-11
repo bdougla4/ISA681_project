@@ -80,7 +80,7 @@ class Users:
         try:
             logging.debug("Getting user: %s", userid)
             # dbCur = db.cursor()
-            dbCur.execute('SELECT * FROM login where user_id = %s', (userid,))
+            dbCur.execute('SELECT * FROM login where login_id = %s', (userid,))
             user = (dbCur.fetchone())
             logging.info("Returning user: %s", str(user))
             return user
