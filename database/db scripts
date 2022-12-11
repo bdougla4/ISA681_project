@@ -1,80 +1,3 @@
--- might need
--- DROP TABLE IF EXISTS scrabble.login;
-
--- pgadmin
-
-CREATE SCHEMA IF NOT EXISTS scrabble;
-
-
-CREATE TABLE IF NOT EXISTS scrabble.login
-(
-	login_id BIGINT PRIMARY KEY,
-	username VARCHAR(50) UNIQUE NOT NULL,
-	password VARCHAR(255) NOT NULL,
-	salt varchar(40) NOT NULL,
-	actively_logged_in BOOLEAN NOT NULL,
-	last_log_in DATE,
-	last_log_out DATE
-);
-
-
-CREATE TABLE IF NOT EXISTS scrabble.user_WL
-(
-	user_id BIGINT PRIMARY KEY,
-	username VARCHAR(50) UNIQUE NOT NULL,
-	wins INT,
-	losses INT
-);
-
-CREATE TABLE IF NOT EXISTS scrabble.games
-(
-	game_id BIGINT PRIMARY KEY,
-	user_id_one BIGINT NOT NULL,
-	user_id_two BIGINT NOT NULL,
-	win BOOLEAN NOT NULL,
-	date_played TIMESTAMP NOT NULL,
-	active_game BOOLEAN NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS scrabble.moves
-(
-	move_id BIGINT PRIMARY KEY,
-	game_id BIGINT,
-	word_created VARCHAR(8),
-	turn_skipped BOOLEAN NOT NULL,
-	column_num INT,
-	row_num INT,
-	position_played VARCHAR(8)
-);
-
-
-ALTER TABLE IF EXISTS scrabble.games
-	ADD FOREIGN KEY(user_id_one)
-	REFERENCES scrabble.users(user_id)
-	ON DELETE SET NULL;
-ALTER TABLE IF EXISTS scrabble.games
-	ADD FOREIGN KEY(user_id_two)
-	REFERENCES scrabble.users(user_id)
-	ON DELETE SET NULL;
-
-ALTER TABLE IF EXISTS scrabble.moves
-	ADD FOREIGN KEY(game_id)
-	REFERENCES scrabble.games(game_id)
-	ON DELETE SET NULL;
-
-
-
-
-
-
-
-
-
-
-
-------------------------------------------------
---phpmyadmin
-
 CREATE DATABASE IF NOT EXISTS scrabble;
 
 
@@ -106,6 +29,9 @@ CREATE TABLE IF NOT EXISTS scrabble.games
 	user_id_two BIGINT NOT NULL,
 	user_id_one_score INT NOT NULL,
 	user_id_two_score INT NOT NULL,
+	bag VARCHAR(400),
+	user_one_rack VARCHAR(20),
+	user_two_rack VARCHAR(20),
 	winner_user_id BIGINT,
 	date_played TIMESTAMP NOT NULL,
 	active_game BOOLEAN NOT NULL,
