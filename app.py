@@ -205,7 +205,7 @@ def game():
     displayForfeitError = None
     displayNotInRackError = None
     playerStats = None
-    board = session['board']
+    # board = session['board']
     # .split('\n')
     try:
         dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -219,25 +219,30 @@ def game():
         if (session.get('rackOne') == None):
             logging.debug("Can not find rack in session. Need to generate old session keys")
             generate_old_session(dbCur, currentGame)
-        if (currentGame['current_users_turn'] == session['id']):
-            rack = session['rackOne']
-        else:
-            rack = session['rackTwo']
 
+        # rack = session['rack']
+        # print()
+        if (currentGame['current_users_turn'] == session['id']):
+            rack = currentGame['user_one_rack']
+        else:
+            rack = currentGame['user_two_rack']
+
+        # if 'submit-user-input' in request.form and ('user-word' in request.form):
         if (('submit-user-input' in request.form and ('user-word' in request.form and request.form['user-word'] == '###')) 
         or ('submit-user-input' in request.form and ('user-word' in request.form and request.form['user-word'] != '') and 
         ('user-position' in request.form and request.form['user-position'] != '') 
         and ('col' in request.form and request.form['col'] != '') and ('row' in request.form and request.form['row'] != ''))):
             logging.debug('user submitted position, word, row, and column')
-            position = str(escape(request.form["user-position"]))
+            
             word = str(escape(request.form["user-word"]))
+            position = str(escape(request.form["user-position"]))
             col = str(escape(request.form["col"]))
             row = str(escape(request.form["row"]))
 
 
             # TO-DO: make sure it is user's turn when inserting move
             playerStats = GamePlay.handle_users_input(GamePlay, dbCur, currentGame['game_id'], session['userIdTurn'], 
-            word, position, col, row, rack)
+            word, position, col, row, rack, session['board'])
             session['userNameTurn'] = playerStats['currentUserNameTurn']
             session['userIdTurn'] = playerStats['currentUserIdTurn']
             rack=playerStats['rack']
@@ -304,6 +309,7 @@ def newGame():
         userTwoRack = Rack(bag)
         session['rackOne'] = userOneRack.get_rack_str()
         session['rackTwo'] = userTwoRack.get_rack_str()
+        # session['rack'] = userOneRack.get_rack_str()
 
         session['userOneId'] = userid
         session['userTwoId'] = userid2
@@ -347,28 +353,31 @@ def forfeitGame():
 
 @app.route('/scoreboard/', methods=['GET', 'POST'])
 def scoreboard():
-    userScore = request.args.get('user-score')
-    if request.method == 'GET' and (('username' in request.args) or
-                                    ('user-score' in request.args) or ('self-score' in request.args)):
-        if ((userScore == None) or (userScore == '')):
-            username = session['name']
-            logging.debug('user: %s wants to see their own personal scores', username)
-            return generateScoreboard(username)
-
-        username = request.args.get('username')
-        if (username != ''):
-            username = str(escape(username))
-            logging.info('user is requesting score for user: %s', username)
-            # if ((re.match(r'[^@]+@[^@]+\.[^@]+', username)) or (re.match(r'[A-Za-z]{1,50}', username))):
-
-            if re.match(r'[A-Za-z0-9]{1,50}', username):
-                logging.info('%s is good username format', username)
-                # userScore = request.args.get('user-score')     
+    if('id' in session):
+        userScore = request.args.get('user-score')
+        if request.method == 'GET' and (('username' in request.args) or
+                                        ('user-score' in request.args) or ('self-score' in request.args)):
+            if ((userScore == None) or (userScore == '')):
+                username = session['name']
+                logging.debug('user: %s wants to see their own personal scores', username)
                 return generateScoreboard(username)
-            else:
-                logging.warn('%s is bad username format', username)
+
+            username = request.args.get('username')
+            if (username != ''):
+                username = str(escape(username))
+                logging.info('user is requesting score for user: %s', username)
+                # if ((re.match(r'[^@]+@[^@]+\.[^@]+', username)) or (re.match(r'[A-Za-z]{1,50}', username))):
+
+                if re.match(r'[A-Za-z0-9]{1,50}', username):
+                    logging.info('%s is good username format', username)
+                    # userScore = request.args.get('user-score')     
+                    return generateScoreboard(username)
+                else:
+                    logging.warn('%s is bad username format', username)
+        return render_template('scoreboard.html', userNotLoggedIn=False)
   
-    return render_template('scoreboard.html')
+    logging.warning('unauthenticated user attempting to view scoreboard')
+    return render_template('scoreboard.html', userNotLoggedIn=True)
 
 def generateScoreboard(username):
     noScores = False

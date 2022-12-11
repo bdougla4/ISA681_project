@@ -61,7 +61,7 @@ class Games:
             if str(userId) == str(userOne):
                 userOneScore = userOneScore + userScore
                 if rack == None:
-                    game['user_one_rack']
+                    rack = game['user_one_rack']
                 logging.debug("setting user's: %s score to: %s", userOne, userOneScore)
                 dbCur.execute("UPDATE games SET user_id_one_score = %s, current_users_turn = %s, bag = %s, user_one_rack = %s WHERE game_id = %s and active_game = True", 
                 (userOneScore, userTwo, bag, rack, gameId))
@@ -71,7 +71,7 @@ class Games:
             else:
                 userTwoScore = userTwoScore + userScore
                 if rack == None:
-                    game['user_two_rack']
+                    rack = game['user_two_rack']
                 logging.debug("setting user's: %s score to: %s", userTwo, userTwoScore)
                 dbCur.execute("UPDATE games SET user_id_two_score = %s, current_users_turn = %s, bag = %s, user_two_rack = %s WHERE game_id = %s and active_game = True", 
                 (userTwoScore, userOne, bag, rack, gameId))

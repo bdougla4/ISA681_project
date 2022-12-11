@@ -8,6 +8,12 @@
 </head>
 <body>
 		<div class="login">
+			<!-- <pre>
+			{% for row in session['board'] %}
+			<div style="margin-bottom:-35px; margin-top:-5px;">{{row}}</div>
+			{% endfor %}
+		</pre> -->
+
 			<h1>ISA681 Scrabble Login Page </h1>
 			<form action="{{ url_for('login') }}" method="post">
 				{% if msg is defined and msg %}

@@ -11,48 +11,59 @@
 <body>
 		<div class="scoreboard">
 			<h1>Scoreboard</h1>
-
-            <form action="{{ url_for('scoreboard') }}" method="GET">
-                <h2>Enter the username of the player whose scores / moves you would like to view:</h2>
-                <!-- TO-DO: how are we formatting username? -->
-                <input type="text" name="username" placeholder="Username" id="username" 
-                pattern="(^[A-Za-z0-9]{1,50}$)">
-                <!-- pattern="(^[A-Za-z]{1,50}$)|(^[^@]+@[^@]+\.[^@]+$)"> -->
-
-
-                <button name="user-score" value="user-score">Search User Scores</button>
-
-                <h2>Or view your own scores / moves:</h2>
-                <button name="self-score" value="self-score">View my Scores</button>
-            </form>
-
-            {% if noScores is defined and noScores == True %}
-            <h3>User has no completed games or does not exist</h3>
-            {% endif %}
-
-
-            {% if scoresRetrieved is defined and scoresRetrieved %}
-            <h2>Viewing scores for user: {{username}}</h2>
-            {% if userFinalScores is defined and userFinalScores %}
-                <h3>User's Overall Win / Loss Ratio:</h3>
-                <h4>Wins: <span> {{userFinalScores.win}} </span> -- Losses: <span> {{userFinalScores.loss}} </span></h4>
-            {% endif %}
-            <h3>Games Played:</h3>
-            <h4>(Click on the Game ID to view the moves for that game)</h4>
-            <ol>
-                {% for score in scoresRetrieved %}
-                <li>
-                    <a href="{{url_for('getMoves', gameId=score.gameId)}}">Game ID: {{score.gameId}}</a> -- User: {{score.user}} -- Opponent: {{score.opponent}} -- Winner: {{score.winner}} -- Date Played: {{score.datePlayed}}
-                </li>
-                {% endfor %}
-            </ol>
-            <!-- {{scoresRetrieved}} -->
-            {% endif %}
-
-            <div></div>
-            <a href="{{url_for('menu')}}">
-                <button>Back to Menu</button>            
+            {% if userNotLoggedIn is defined and userNotLoggedIn %}
+            <h2 style="color:red">You must be logged in to view scores.</h2>
+            <a href="{{ url_for('login') }}">
+                <button>Login</button>            
             </a>
+            
+            {% else %}
+            
+
+                <form action="{{ url_for('scoreboard') }}" method="GET">
+                    <h2>Enter the username of the player whose scores / moves you would like to view:</h2>
+                    <!-- TO-DO: how are we formatting username? -->
+                    <input type="text" name="username" placeholder="Username" id="username" 
+                    pattern="(^[A-Za-z0-9]{1,50}$)">
+                    <!-- pattern="(^[A-Za-z]{1,50}$)|(^[^@]+@[^@]+\.[^@]+$)"> -->
+
+
+                    <button name="user-score" value="user-score">Search User Scores</button>
+
+                    <h2>Or view your own scores / moves:</h2>
+                    <button name="self-score" value="self-score">View my Scores</button>
+                </form>
+
+                {% if noScores is defined and noScores == True %}
+                <h3>User has no completed games or does not exist</h3>
+                {% endif %}
+
+
+                {% if scoresRetrieved is defined and scoresRetrieved %}
+                <h2>Viewing scores for user: {{username}}</h2>
+                {% if userFinalScores is defined and userFinalScores %}
+                    <h3>User's Overall Win / Loss Ratio:</h3>
+                    <h4>Wins: <span> {{userFinalScores.win}} </span> -- Losses: <span> {{userFinalScores.loss}} </span></h4>
+                {% endif %}
+                <h3>Games Played:</h3>
+                <h4>(Click on the Game ID to view the moves for that game)</h4>
+                <ol>
+                    {% for score in scoresRetrieved %}
+                    <li>
+                        <a href="{{url_for('getMoves', gameId=score.gameId)}}">Game ID: {{score.gameId}}</a> -- User: {{score.user}} -- Opponent: {{score.opponent}} -- Winner: {{score.winner}} -- Date Played: {{score.datePlayed}}
+                    </li>
+                    {% endfor %}
+                </ol>
+                <!-- {{scoresRetrieved}} -->
+                {% endif %}
+
+                <div></div>
+                <a href="{{ url_for('menu') }}">
+                    <button>Menu</button>            
+                </a>
+
+            {% endif %}
+
 		</div>
 	</body>
 </html>
