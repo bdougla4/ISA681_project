@@ -26,7 +26,6 @@ class Users:
             dbCur.execute("SELECT win FROM users WHERE user_id = %s", (userid,))
             # TO-DO add log to catch an error if fetchone is empty
             returnedValue = (dbCur.fetchone())
-            print(returnedValue)
             winResults = (returnedValue['win'])
             logging.info("User: %s's current wins: %s", userid, winResults)
             return winResults
@@ -137,14 +136,3 @@ class Users:
         except Error as err:
             logging.error("Error: %s", err)
             dbCur.close()
-
-    # def get_all_users(db):
-    #     try:
-    #         dbCur = db.cursor()
-    #         dbCur.execute('SELECT * FROM login')
-    #         for row in dbCur.fetchall():
-    #             print(row)
-    #         # TO-DO add return statement if needed
-    #     except Error as err:
-    #         print(f"Error: '{err}'")
-    #         db.close()

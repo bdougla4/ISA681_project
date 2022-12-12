@@ -11,7 +11,7 @@ import MySQLdb.cursors
 import os
 import re
 import bcrypt
-import eventlet
+# import eventlet
 import logging
 from database.games import *
 from database.users import *
@@ -76,10 +76,6 @@ def login():
     the stored information in the database.
     """
 
-    # board = Board.get_board()
-    # session['board'] = board
-    # print(session['board'])
-
     if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
         logging.info("Login request: %s" % (request.form["username"]))
         cursor = db.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -110,10 +106,6 @@ def login():
                 msg = "Welcome " + username + "!"
                 logging.info("Logging sessionID: %s, user: %s, email: %s." % (session['id'], session['name'],
                                                                               session['email']))
-                # if Games.get_all_active_games_for_single_user_id(cursor, session['id']) != None:
-                #     activeGame = True
-                #     logging.info("User has active game")
-                # return render_template("menu.html", activeGame=activeGame, msg=msg)
                 return redirect(url_for('menu'))
             else:
                 msg = "Incorrect Username/Password!"
@@ -218,30 +210,34 @@ def game():
             generate_old_session(dbCur, currentGame)
         generate_rack(currentGame)
         rack = session['rack']
-        if (('submit-user-input' in request.form and ('user-word' in request.form and request.form['user-word'] == '###')) 
-        or ('submit-user-input' in request.form and ('user-word' in request.form and request.form['user-word'] != '') and 
-        ('user-position' in request.form and request.form['user-position'] != '') 
-        and ('col' in request.form and request.form['col'] != '') and ('row' in request.form and request.form['row'] != ''))):
-            logging.debug('user submitted position, word, row, and column')
-            
-            word = str(escape(request.form["user-word"]))
-            position = str(escape(request.form["user-position"]))
-            col = str(escape(request.form["col"]))
-            row = str(escape(request.form["row"]))
+
+        # only user whose turn it is can make a move
+        if((playerStats['currentUserNameTurn']).__eq__(session['name'])):
+
+            if (('submit-user-input' in request.form and ('user-word' in request.form and request.form['user-word'] == '###')) 
+            or ('submit-user-input' in request.form and ('user-word' in request.form and request.form['user-word'] != '') and 
+            ('user-position' in request.form and request.form['user-position'] != '') 
+            and ('col' in request.form and request.form['col'] != '') and ('row' in request.form and request.form['row'] != ''))):
+                logging.debug('user submitted position, word, row, and column')
+                
+                word = str(escape(request.form["user-word"]))
+                position = str(escape(request.form["user-position"]))
+                col = str(escape(request.form["col"]))
+                row = str(escape(request.form["row"]))
 
 
-            playerStats = GamePlay.handle_users_input(GamePlay, dbCur, currentGame['game_id'], session['userIdTurn'], 
-            word, position, col, row, rack
-            )
+                playerStats = GamePlay.handle_users_input(GamePlay, dbCur, currentGame['game_id'], session['userIdTurn'], 
+                word, position, col, row, rack
+                )
 
-            session['userNameTurn'] = playerStats['currentUserNameTurn']
-            session['userIdTurn'] = playerStats['currentUserIdTurn']
+                session['userNameTurn'] = playerStats['currentUserNameTurn']
+                session['userIdTurn'] = playerStats['currentUserIdTurn']
 
-            currentGame = Games.get_all_active_games_for_single_user_id(dbCur, session['id'])
-            generate_rack(currentGame)
-            rack = session['rack']
+                currentGame = Games.get_all_active_games_for_single_user_id(dbCur, session['id'])
+                generate_rack(currentGame)
+                rack = session['rack']
 
-            db.connection.commit()
+                db.connection.commit()
     except UserForfeitedException as err:
         logging.warning("Other user forfeited during game play. Displaying error to UI")
         displayForfeitError = True
@@ -345,7 +341,7 @@ def newGame():
             session['userNameTurn'] = username
             logging.debug('User has no active games currently. Creating a new game')
 
-            gameId = Games.add_game(dbCur, userid, userid2, bag.get_bag_str(), userOneRack.get_rack_str(), userTwoRack.get_rack_str())
+            gameId = Games.add_game(dbCur, userid, session['userTwoId'], bag.get_bag_str(), userOneRack.get_rack_str(), userTwoRack.get_rack_str())
             db.connection.commit()
 
             playerStats = {'currentUserNameTurn':session['userNameTurn'], 'playerOne':session['userOneName'], 
@@ -438,11 +434,4 @@ def getMoves():
 
 
 if __name__ == "__main__":
-    eventlet.wsgi.server(eventlet.wrap_ssl(eventlet.listen(("0.0.0.0", 5000)),
-                          certfile="/etc/apache2/certs/isascrabble.crt",
-                          keyfile="/etc/apache2/certs/isascrabble.key",
-                          server_side=True), app)
     app.run(ssl_context='adhoc')
-    
-    # Use the following with OpenSSL keys generated for on a system. 
-    # app.run(host="0.0.0.0", ssl_context=("/etc/apache2/certs/isascrabble.crt", "/etc/apache2/certs/isascrabble.key"))

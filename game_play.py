@@ -11,6 +11,8 @@ from board.rack import *
 from board.bag import *
 from board.board import *
 import re
+import logging
+
 
 
 # TO-DO: ensure log injection can't happen 
@@ -20,26 +22,26 @@ class GamePlay:
     def is_word_in_dictionary(word):
         dictionary = PyDictionary()
         try:
-            print('Getting definition for word: ' + word)
+            logging.debug("getting definition for word: %s", word)
             definition = dictionary.meaning(word, disable_errors=True)
             
             if(definition == None):
-                print('definition was not found')
+                logging.debug("definition was not found")
                 return False
-            print('definition was found')
+            logging.debug("definition was found")  
             return True
         except Exception as ex:
-            print(f"Something went wrong when accessing dictionary: '{ex}'")
+            logging.error("Error: %s", ex)
 
 
     # checks if the user's position is "right" or "down"
     def is_position_allowed(position): 
-        print("checking is user's position is allowed: " + position)
+        logging.debug("checking if user's position is allowed")
         if ((position.upper() == "RIGHT" or position.upper() == "DOWN")) :
-            print("user's position input is acceptable")
+            logging.debug("user's position input is acceptable")
             return True
         else:
-            print("user's position input is not acceptable")
+            logging.debug("user's position input is not acceptable")
             return False
 
     
