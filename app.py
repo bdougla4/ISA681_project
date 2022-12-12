@@ -33,10 +33,10 @@ app = Flask(__name__)
 
 # Random 24 bit string for session key.
 app.secret_key = os.urandom(24)
-app.config['MYSQL_HOST'] = '127.0.0.1'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = ''
-app.config['MYSQL_DB'] = 'scrabble'
+app.config['MYSQL_HOST'] = os.getenv('DB_HOST')
+app.config['MYSQL_USER'] = os.getenv('DB_SCRABBLE')
+app.config['MYSQL_PASSWORD'] = os.getenv('DB_SCRABBLE_PWD')
+app.config['MYSQL_DB'] = os.getenv('DB_Scrabble')
 
 # Loading flask-login Login Manager to assist with joining multiple login sessions for game play.
 # loginManger = LoginManger()
@@ -85,7 +85,7 @@ def login():
         password = escape(request.form["password"]).encode('utf-8')
 
         # check if username is in database
-        cursor.execute("SELECT * from login where username='" + username + "'")
+        cursor.execute("SELECT * from login where username= %s", (username,))
         account = cursor.fetchone()
 
         if account is None:
