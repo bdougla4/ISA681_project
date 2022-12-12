@@ -57,16 +57,22 @@ class Games:
             if bag == None:
                 bag = game['bag']
 
+
             # current user is user_id_one
-            if str(userId) == str(userOne):
+            # if str(userId) == str(userOne):
+            if str(currentPlayer) == str(userOne):
                 userOneScore = userOneScore + userScore
                 if rack == None:
                     rack = game['user_one_rack']
                 logging.debug("setting user's: %s score to: %s", userOne, userOneScore)
                 dbCur.execute("UPDATE games SET user_id_one_score = %s, current_users_turn = %s, bag = %s, user_one_rack = %s WHERE game_id = %s and active_game = True", 
                 (userOneScore, userTwo, bag, rack, gameId))
-                rack = game['user_two_rack']
-                return({'currentUserNameTurn':playerTwoUsername, 'currentUserIdTurn':playerTwo['login_id'], 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername,'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore, 'rack':rack})
+                # rack = game['user_two_rack']
+                return({'currentUserNameTurn':playerTwoUsername, 'currentUserIdTurn':playerTwo['login_id'], 
+                'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername,'playerOneScore':userOneScore, 
+                'playerTwoScore':userTwoScore
+                # , 'rack':rack
+                })
             # current user is user_id_two
             else:
                 userTwoScore = userTwoScore + userScore
@@ -75,8 +81,12 @@ class Games:
                 logging.debug("setting user's: %s score to: %s", userTwo, userTwoScore)
                 dbCur.execute("UPDATE games SET user_id_two_score = %s, current_users_turn = %s, bag = %s, user_two_rack = %s WHERE game_id = %s and active_game = True", 
                 (userTwoScore, userOne, bag, rack, gameId))
-                rack = game['user_one_rack']
-                return({'currentUserNameTurn':playerOneUserName, 'currentUserIdTurn':playerOne['login_id'], 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':userOneScore, 'playerTwoScore':userTwoScore, 'rack':rack})
+                # rack = game['user_one_rack']
+                return({'currentUserNameTurn':playerOneUserName, 'currentUserIdTurn':playerOne['login_id'], 
+                'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':userOneScore, 
+                'playerTwoScore':userTwoScore
+                # , 'rack':rack
+                })
 
         except Error as err:
             logging.error("Error: %s", err)

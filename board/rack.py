@@ -51,6 +51,12 @@ class Rack:
     def remove_multiple_from_rack(self, tiles):
         for tile in tiles:
             self.rack.remove(tile.upper())
+            #         try:
+            # for tile in tiles:
+            #     self.rack.remove(tile.upper())
+            #                         logging.warning("User's word: %s does not use the letters in the rack", word)
+            #         raise LettersNotInRackException("User's word: %s does not use the letters in the rack", word)
+            
 
     def replenish_rack(self, bag):
         #Adds tiles to the rack after a turn such that the rack will have 7 tiles (assuming a proper number of tiles in the bag).

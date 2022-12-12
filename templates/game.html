@@ -17,47 +17,52 @@
 				<h2>{{playerStats.playerOne}}'s score: {{playerStats.playerOneScore}}</h2>
 				<h2>{{playerStats.playerTwo}}'s score: {{playerStats.playerTwoScore}}</h2>
 
-			
-				<form action="{{ url_for('game', playerStats=playerStats, gameStatus='continue', rack=rack)}}" method="POST">
+				{% if session['name'] is defined and session['name'] == playerStats.currentUserNameTurn %}
+				<h2 style="color:green">User can make move.</h2>
+				
+					<form action="{{ url_for('game', playerStats=playerStats, gameStatus='continue', rack=rack)}}" method="POST">
 
-						<h2>Your rack: {{rack}}</h2>
-					
-						<h2>Create a word longer than 2 letters using the letters in your rack, or enter ### to skip a turn</h2>
-						{% if displayNotInRackError is defined and displayNotInRackError %}
-						<h2 style="color:red">The word you created does not use the letters in the rack. Please try again</h2>
-						{% elif displayUndefinedError is defined and displayUndefinedError %}
-						<h2 style="color:red">The word you selected is not a real word. Please try again.</h2>
-						{% endif %}
-
-						<input type="text" name="user-word" placeholder="Enter word" id="user-word" 
-						pattern="(^([A-Za-z]{2,7}|###)$)">
+							<h2>Your rack: {{rack}}</h2>
 						
-						<h2>Enter position for your word. "Right" or "Down":</h2>
-						<input type="text" name="user-position" placeholder="Enter position" id="user-position" 
-						pattern="(^(([rR][iI][gG][hH][tT])|([dD][oO][wW][nN]))$)">
+							<h2>Create a word longer than 2 letters using the letters in your rack, or enter ### to skip a turn</h2>
+							{% if displayNotInRackError is defined and displayNotInRackError %}
+							<h2 style="color:red">The word you created does not use the letters in the rack. Please try again</h2>
+							{% elif displayUndefinedError is defined and displayUndefinedError %}
+							<h2 style="color:red">The word you selected is not a real word. Please try again.</h2>
+							{% endif %}
 
-						<h2>Enter column number for your word (1-15):</h2>
-						<input type="text" name="col" placeholder="Column number" id="col" 
-						pattern="(^1[0-5]|[1-9]$)">
+							<input type="text" name="user-word" placeholder="Enter word" id="user-word" 
+							pattern="(^([A-Za-z]{2,7}|###)$)">
+							
+							<h2>Enter position for your word. "Right" or "Down":</h2>
+							<input type="text" name="user-position" placeholder="Enter position" id="user-position" 
+							pattern="(^(([rR][iI][gG][hH][tT])|([dD][oO][wW][nN]))$)">
 
-						<h2>Enter row number for your word (1-15):</h2>
-						<input type="text" name="row" placeholder="Row number" id="row" 
-						pattern="(^1[0-5]|[1-9]$)"> 
-						<button name="submit-user-input" value="submit-user-input">Submit Position and Word</button>
-						<!-- <button name="submit-user-input" value="submit-user-input">Submit Word</button> -->
+							<h2>Enter column number for your word (1-15):</h2>
+							<input type="text" name="col" placeholder="Column number" id="col" 
+							pattern="(^1[0-5]|[1-9]$)">
 
-				</form>
+							<h2>Enter row number for your word (1-15):</h2>
+							<input type="text" name="row" placeholder="Row number" id="row" 
+							pattern="(^1[0-5]|[1-9]$)"> 
+							<button name="submit-user-input" value="submit-user-input">Submit Position and Word</button>
+							<!-- <button name="submit-user-input" value="submit-user-input">Submit Word</button> -->
+
+					</form>
+				{% else %}
+				<h2 style="color:red">Waiting for other user to take their turn</h2>
+				{% endif %}
 			{% endif %}
 			<div></div>
             <a href="{{url_for('menu')}}">
                 <button>Back to Menu</button>            
             </a>
 
-			<pre>
+			<!-- <pre>
 				{% for row in session['board'] %}
 				<div style="margin-bottom:-35px; margin-top:-5px;">{{row}}</div>
 				{% endfor %}
-			</pre>
+			</pre> -->
 		</div>
 	</body>
 </html>

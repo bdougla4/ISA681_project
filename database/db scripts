@@ -11,8 +11,16 @@ CREATE TABLE IF NOT EXISTS scrabble.login
 	password VARCHAR(255) NOT NULL,
 	salt varchar(40) NOT NULL,
 	actively_logged_in BOOLEAN NOT NULL,
-	last_log_in DATE,
-	last_log_out DATE
+	waiting BOOLEAN NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS scrabble.gamerooms
+(
+	room_id BIGINT PRIMARY KEY,
+	player1 varchar(50),
+	player1_rack varchar(20),
+	player2 varchar(50),
+	player2_rack varchar(20)
 );
 
 

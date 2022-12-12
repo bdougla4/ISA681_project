@@ -11,6 +11,7 @@ import MySQLdb.cursors
 import os
 import re
 import bcrypt
+import eventlet
 import logging
 from database.games import *
 from database.users import *
@@ -27,9 +28,6 @@ load_dotenv()
 # Logging functionalilty for informational (and debugging) purposes.
 # logging.basicConfig(filename='app.log', filemode='a', encoding='utf-8', level=logging.DEBUG)
 logging.basicConfig(level=logging.DEBUG)
-
-userid2 = 2
-user2name = "user2"
 
 app = Flask(__name__)
 
@@ -162,8 +160,8 @@ def register():
                 active = False
                 salt = bcrypt.gensalt()
                 password_hash = bcrypt.hashpw(password, salt)
-                cursor.execute('INSERT INTO login (username, email, password, salt, actively_logged_in)'
-                               'VALUES(%s, %s, %s, %s, %s)', (username, email, password_hash, salt, active))
+                cursor.execute('INSERT INTO login (username, email, password, salt, actively_logged_in, waiting)'
+                               'VALUES(%s, %s, %s, %s, %s, %s)', (username, email, password_hash, salt, active, False))
                 db.connection.commit()
                 loginId = cursor.lastrowid
                 logging.debug("Created Login. Now creating user for login")
@@ -205,8 +203,7 @@ def game():
     displayForfeitError = None
     displayNotInRackError = None
     playerStats = None
-    # board = session['board']
-    # .split('\n')
+    rack=None
     try:
         dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
         logging.debug("user wants to continue previous game. checking if user has active game")
@@ -216,18 +213,11 @@ def game():
             playerStats = GamePlay.generate_continue_game_stats(dbCur, currentGame)
         else:
             raise UserForfeitedException("Other user forfeited during game play")
-        if (session.get('rackOne') == None):
-            logging.debug("Can not find rack in session. Need to generate old session keys")
+        if ('userTwoId' not in session):
+            logging.debug("Can not find second user in session. Need to generate old session keys")
             generate_old_session(dbCur, currentGame)
-
-        # rack = session['rack']
-        # print()
-        if (currentGame['current_users_turn'] == session['id']):
-            rack = currentGame['user_one_rack']
-        else:
-            rack = currentGame['user_two_rack']
-
-        # if 'submit-user-input' in request.form and ('user-word' in request.form):
+        generate_rack(currentGame)
+        rack = session['rack']
         if (('submit-user-input' in request.form and ('user-word' in request.form and request.form['user-word'] == '###')) 
         or ('submit-user-input' in request.form and ('user-word' in request.form and request.form['user-word'] != '') and 
         ('user-position' in request.form and request.form['user-position'] != '') 
@@ -240,12 +230,17 @@ def game():
             row = str(escape(request.form["row"]))
 
 
-            # TO-DO: make sure it is user's turn when inserting move
             playerStats = GamePlay.handle_users_input(GamePlay, dbCur, currentGame['game_id'], session['userIdTurn'], 
-            word, position, col, row, rack, session['board'])
+            word, position, col, row, rack
+            )
+
             session['userNameTurn'] = playerStats['currentUserNameTurn']
             session['userIdTurn'] = playerStats['currentUserIdTurn']
-            rack=playerStats['rack']
+
+            currentGame = Games.get_all_active_games_for_single_user_id(dbCur, session['id'])
+            generate_rack(currentGame)
+            rack = session['rack']
+
             db.connection.commit()
     except UserForfeitedException as err:
         logging.warning("Other user forfeited during game play. Displaying error to UI")
@@ -262,11 +257,26 @@ def game():
         displayUndefinedError=displayUndefinedError, displayForfeitError=displayForfeitError, 
         displayNotInRackError=displayNotInRackError, rack=rack)
 
+def generate_rack(currentGame):
+    currentUsersTurn = currentGame['current_users_turn']
+    userOne = currentGame['user_id_one']
+    userTwo = currentGame['user_id_two']
+
+    if currentUsersTurn == userOne:
+        session['rack'] = currentGame['user_one_rack']
+    else:
+        session['rack'] = currentGame['user_two_rack']
+
 def generate_old_session(dbCur, currentGame):
     logging.debug("generating old session based on current game stats")
 
-    session['userOneId'] = currentGame['user_id_one']
-    session['userTwoId'] = currentGame['user_id_two']
+    if (currentGame['user_id_one'] == session['id']):
+        session['userOneId'] = currentGame['user_id_one']
+        session['userTwoId'] = currentGame['user_id_two']
+    
+    else:
+        session['userOneId'] = currentGame['user_id_two']
+        session['userTwoId'] = currentGame['user_id_one']
 
     session['userIdTurn'] = currentGame['current_users_turn']
 
@@ -282,56 +292,68 @@ def generate_old_session(dbCur, currentGame):
         session['userTwoName'] = session['name']
         session['userNameTurn'] = user['username']
 
-    session['rackOne'] = currentGame['user_one_rack']
-    session['rackTwo'] = currentGame['user_two_rack']
-
-
 @app.route('/new-game/', methods=['GET', 'POST'])
 def newGame():
-    # TO-DO: get userid from actual user
-    dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
-    logging.debug("user: %s is requesting to join new game", session['name'])
-    
-
-    logging.debug("Making sure user does not have an active game already")
     userid = session['id']
     username = session['name']
+
+    dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
+    logging.debug("user: %s is requesting to join new game", userid)
+
+    logging.debug("Making sure user does not have an active game already")
     activeGames = Games.get_all_active_games_for_single_user_id(dbCur, userid)
 
     if activeGames != None:
-        logging.warn('User: %s is requesting a new game but already has an active one running', userid)
+        logging.info('User: %s is requesting a new game but already has an active one running', userid)
     else:
-        logging.debug('User has no active games currently.')
-        logging.debug('Creating new bag.')
-        bag = Bag()
-        logging.debug('Creating new racks.')
-        userOneRack = Rack(bag)
-        userTwoRack = Rack(bag)
-        session['rackOne'] = userOneRack.get_rack_str()
-        session['rackTwo'] = userTwoRack.get_rack_str()
-        # session['rack'] = userOneRack.get_rack_str()
+        # checking if anyone else waiting to play...
+        opponent = dbCur.execute("SELECT * from login WHERE waiting = 1")
 
-        session['userOneId'] = userid
-        session['userTwoId'] = userid2
+        if opponent == None:
+            # Currently no waiting players, so waiting for opponent on open socket.
+            dbCur.execute("UPDATE login set waiting = 1 WHERE username = %s", opponent)
+            db.connection.commit()
+            msg="User waiting for game play. Open socket connection"
+            return render_template("game.html", userid=userid, msg=msg)
 
-        session['userOneName'] = username
-        session['userTwoName'] = user2name
+        else:
+            # We found a match thus we are going to join players in a room for game play
+            tmp = dbCur.fetchone()
+            opponent = tmp['username']
 
-        session['userIdTurn'] = userid
-        session['userNameTurn'] = username
+            dbCur.execute("UPDATE login set waiting = 0 WHERE username = %s", (opponent,))
+            db.connection.commit()
+            dbCur.execute("UPDATE login set waiting = 0 WHERE username = %s", (username,))
+            db.connection.commit()
 
-        # TO-DO get the correct userids
-        gameId = Games.add_game(dbCur, userid, userid2, bag.get_bag_str(), userOneRack.get_rack_str(), userTwoRack.get_rack_str())
-        db.connection.commit()
-        board = Board.get_board()
-        session['board'] = board
-        # print(session['board'])
+            logging.info("Join player %s and opponent waiting: %s " % (username, opponent))
 
-        #  print(session['board'].split('\n'))
-        playerStats = {'currentUserNameTurn':session['userNameTurn'], 'playerOne':session['userOneName'], 
-        'playerTwo':session['userTwoName'], 'playerOneScore':0, 'playerTwoScore':0}
-        return redirect(url_for('game', gameStatus='newGame', playerStats=playerStats, rack=session['rackOne']))
-    
+            logging.debug('Creating new bag.')
+            bag = Bag()
+            logging.debug('Creating new racks.')
+            userOneRack = Rack(bag)
+            userTwoRack = Rack(bag)
+            session['rack'] = userOneRack.get_rack_str()
+
+            session['userOneId'] = userid
+            session['userTwoId'] = tmp['login_id']
+
+            session['userOneName'] = username
+            session['userTwoName'] = tmp['username']
+
+            session['userIdTurn'] = userid
+            session['userNameTurn'] = username
+            logging.debug('User has no active games currently. Creating a new game')
+
+            gameId = Games.add_game(dbCur, userid, userid2, bag.get_bag_str(), userOneRack.get_rack_str(), userTwoRack.get_rack_str())
+            db.connection.commit()
+
+            playerStats = {'currentUserNameTurn':session['userNameTurn'], 'playerOne':session['userOneName'], 
+            'playerTwo':session['userTwoName'], 'playerOneScore':0, 'playerTwoScore':0}
+            return redirect(url_for('game', gameStatus='newGame', playerStats=playerStats, rack=session['rack']))
+
+
+
 
 @app.route('/end-game/', methods=['GET', 'POST'])
 def forfeitGame():
@@ -339,14 +361,20 @@ def forfeitGame():
     dbCur = db.connection.cursor(MySQLdb.cursors.DictCursor)
     logging.info("user: %s forfeited game", session['id'])
 
+    if('userTwoId' not in session):
+        logging.debug("user wants to forfeit game but can not find game in session")
+        currentGame = Games.get_all_active_games_for_single_user_id(dbCur, session['id'])
+        logging.debug("generating old session keys")
+        generate_old_session(dbCur, currentGame)
+
     # TO-DO get the correct userid to mark as winner
-    Games.game_finished(Games, dbCur, session['id'], userid2, userid2)
+    Games.game_finished(Games, dbCur, session['id'], session['userTwoId'], session['userTwoId'])
 
     # TO-DO get the correct userid to mark as winner
     Users.set_user_lost(Users, dbCur, session['id'])
 
     # TO-DO get the correct userid to mark as winner
-    Users.set_user_won(Users, dbCur, userid2)
+    Users.set_user_won(Users, dbCur, session['userTwoId'])
 
     db.connection.commit()
     return render_template('menu.html', activeGame=False, gameForfeited=True)
@@ -410,7 +438,11 @@ def getMoves():
 
 
 if __name__ == "__main__":
-    app.run()
+    eventlet.wsgi.server(eventlet.wrap_ssl(eventlet.listen(("0.0.0.0", 5000)),
+                          certfile="/etc/apache2/certs/isascrabble.crt",
+                          keyfile="/etc/apache2/certs/isascrabble.key",
+                          server_side=True), app)
+    app.run(ssl_context='adhoc')
     
     # Use the following with OpenSSL keys generated for on a system. 
     # app.run(host="0.0.0.0", ssl_context=("/etc/apache2/certs/isascrabble.crt", "/etc/apache2/certs/isascrabble.key"))

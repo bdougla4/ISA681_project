@@ -1,4 +1,4 @@
-from flask import session
+# from flask import session
 from Exceptions.LettersNotInRackException import LettersNotInRackException
 from Exceptions.UndefinedWordException import UndefinedWordException
 from Exceptions.UserForfeitedException import UserForfeitedException
@@ -53,7 +53,9 @@ class GamePlay:
         logging.info('final word score: %s', word_score)
         return word_score
 
-    def handle_users_input(self, dbCur, gameId, currentUserId, word, position, col, row, rack, board):
+    def handle_users_input(self, dbCur, gameId, currentUserId, word, position, col, row, rack
+    # , board
+    ):
         logging.debug("user's position: %s", position)
         logging.debug("user's word: %s", word)
         logging.debug("user's col: %s", col)
@@ -67,7 +69,10 @@ class GamePlay:
             if(word == '###'):
                 logging.info("user skipped turn")
                 return self.add_moves_and_update_game(dbCur, gameId, currentUserId, word, 
-                wordScore, True, None, None, None, None, None, None)
+                wordScore, True, None, None, None, None, None
+                # , None
+                )
+
             for letter in word:
                 if letter.upper() not in rack:
                 # TO-DO: uncomment when rack is in session
@@ -83,7 +88,9 @@ class GamePlay:
                     rack = rackBag['rack']
                     bag = rackBag['bag']
                     return self.add_moves_and_update_game(dbCur, gameId, currentUserId, word, 
-                    wordScore, False, col, row, position, rack, bag, board)
+                    wordScore, False, col, row, position, rack, bag
+                    # , board
+                    )
                 else: 
                     logging.warning('position and / or word was not formatted properly')
                     raise UndefinedWordException("User's word: %s is undefined", word)
@@ -101,15 +108,17 @@ class GamePlay:
         bag = Rack.replenish_rack(Rack, bag)
         return {'rack': Rack.convert_array_to_string(Rack), 'bag':Bag.convert_array_to_string(bag)}
 
-    def add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, turnSkipped, col, row, position, rack, bag, board):
+    def add_moves_and_update_game(dbCur, gameId, userId, word, wordScore, turnSkipped, col, row, position, rack, bag
+    # , board
+    ):
         # checking in case other user forfeited game in the meantime
         logging.debug("checking if game is still active")
         isGameStillActive = Games.get_active_game_by_id(dbCur, gameId)
         if isGameStillActive != None:
             logging.debug("game is still active. adding move and updating game")
             Moves.add_move(dbCur, gameId, userId, word, wordScore, turnSkipped, col, row, position)
-            if(turnSkipped == False):
-                session['board'] = Board.place_word(board, word, col, row, position)
+            # if(turnSkipped == False):
+            #     session['board'] = Board.place_word(board, word, col, row, position)
             return Games.update_game_score(Games, dbCur, gameId, userId, wordScore, rack, bag)
         else: 
             raise UserForfeitedException("Other user forfeited during game play")
@@ -127,18 +136,5 @@ class GamePlay:
         playerTwoUsername = playerTwo['username']
         playerTwoScore = currentGame['user_id_two_score']
 
-        return {'currentUserNameTurn':currentUserNameTurn, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':playerOneScore, 'playerTwoScore':playerTwoScore}
-
-    # No longer needed due to session storage
-    # def generate_new_game_stats(dbCur, newGame):
-    #     currentUsersTurn = Users.get_user_by_user_id(Users, dbCur, (newGame['current_users_turn']))
-    #     currentUsersTurn = currentUsersTurn['username']
-
-    #     playerOne = Users.get_user_by_user_id(Users, dbCur, newGame['user_id_one'])
-    #     playerOneUserName = playerOne['username']
-
-    #     playerTwo = Users.get_user_by_user_id(Users, dbCur, newGame['user_id_two'])
-    #     playerTwoUsername = playerTwo['username']
-    #     return {'currentUsersTurn':currentUsersTurn, 'playerOne':playerOneUserName, 'playerTwo':playerTwoUsername, 'playerOneScore':0, 'playerTwoScore':0}
-
-        
+        return {'currentUserNameTurn':currentUserNameTurn, 'playerOne':playerOneUserName, 
+        'playerTwo':playerTwoUsername, 'playerOneScore':playerOneScore, 'playerTwoScore':playerTwoScore}
